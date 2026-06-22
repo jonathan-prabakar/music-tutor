@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MusicTutor — Find Your Perfect Match</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d0820;color:#1e293b;}
+.view{display:none;} .view.active{display:block;}
+
+/* ── Landing ─────────────────────────────────────────────── */
+#vLanding{
+  min-height:100vh;
+  background:linear-gradient(135deg,#0d0820,#1e1257,#2d1b69);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 20px;text-align:center;position:relative;overflow:hidden;
+}
+.bg-note{position:absolute;font-size:5rem;opacity:.04;user-select:none;pointer-events:none;}
+.land-icon{font-size:3.5rem;margin-bottom:12px;filter:drop-shadow(0 0 24px rgba(251,191,36,.5));}
+.land-h1{font-size:2.6rem;font-weight:800;color:#fff;letter-spacing:-0.5px;margin-bottom:8px;}
+.land-sub{color:rgba(255,255,255,.6);font-size:1rem;max-width:440px;line-height:1.65;margin-bottom:48px;}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:540px;width:100%;}
+.role-card{
+  background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);
+  border-radius:20px;padding:36px 24px;cursor:pointer;transition:all .22s;
+  backdrop-filter:blur(10px);
+}
+.role-card:hover{background:rgba(255,255,255,.13);border-color:rgba(251,191,36,.45);transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,.35);}
+.role-icon{font-size:2.8rem;margin-bottom:12px;}
+.role-title{color:#fff;font-size:1.2rem;font-weight:700;margin-bottom:6px;}
+.role-desc{color:rgba(255,255,255,.5);font-size:0.82rem;line-height:1.5;margin-bottom:14px;}
+.role-pill{display:inline-block;padding:6px 16px;border-radius:99px;font-size:0.78rem;font-weight:600;}
+.pill-y{background:rgba(251,191,36,.18);color:#fbbf24;}
+.pill-v{background:rgba(129,140,248,.2);color:#a5b4fc;}
+
+/* ── Quiz Layout ─────────────────────────────────────────── */
+.quiz-wrap{
+  min-height:100vh;
+  background:linear-gradient(135deg,#0d0820,#1e1257,#2d1b69);
+  display:flex;flex-direction:column;align-items:center;padding:28px 20px 60px;
+}
+.quiz-back{
+  display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.55);
+  font-size:0.85rem;cursor:pointer;margin-bottom:22px;
+  align-self:flex-start;max-width:580px;width:100%;transition:color .15s;
+  background:none;border:none;font-family:inherit;
+}
+.quiz-back:hover{color:#fff;}
+.prog-wrap{width:100%;max-width:580px;margin-bottom:22px;}
+.prog-info{display:flex;justify-content:space-between;color:rgba(255,255,255,.6);font-size:0.76rem;margin-bottom:7px;}
+.prog-track{height:4px;background:rgba(255,255,255,.15);border-radius:99px;}
+.prog-fill{height:100%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:99px;transition:width .4s ease;}
+.qcard{background:#fff;border-radius:22px;padding:38px;width:100%;max-width:580px;box-shadow:0 20px 56px rgba(0,0,0,.28);}
+.qstep{display:none;} .qstep.active{display:block;animation:fadeUp .28s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.qlabel{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;margin-bottom:5px;}
+.qtitle{font-size:1.35rem;font-weight:800;color:#0f172a;margin-bottom:5px;}
+.qhint{color:#94a3b8;font-size:.83rem;margin-bottom:20px;}
+
+/* Options */
+.opts{display:flex;flex-direction:column;gap:9px;}
+.opts.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.opts.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.opt{padding:13px 16px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;
+  display:flex;align-items:flex-start;gap:11px;transition:all .14s;user-select:none;}
+.opt:hover{border-color:#fbbf24;background:#fffbeb;transform:translateY(-1px);}
+.opt.sel{border-color:#f59e0b;background:#fffbeb;}
+.opt-ic{font-size:1.35rem;flex-shrink:0;margin-top:1px;}
+.opt-lbl{font-weight:600;color:#1e293b;font-size:.92rem;}
+.opt-sub{font-size:.75rem;color:#94a3b8;margin-top:2px;}
+
+/* Instrument grid */
+.instr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.ig-opt{padding:16px 8px;border:2px solid #e2e8f0;border-radius:13px;cursor:pointer;
+  text-align:center;transition:all .14s;user-select:none;}
+.ig-opt:hover{border-color:#fbbf24;background:#fffbeb;}
+.ig-opt.sel{border-color:#f59e0b;background:#fffbeb;}
+.ig-ic{font-size:1.9rem;margin-bottom:5px;}
+.ig-lbl{font-size:.76rem;font-weight:600;color:#475569;}
+
+/* Name input */
+.name-in{width:100%;padding:14px 18px;border:2px solid #e2e8f0;border-radius:12px;
+  font-size:1rem;color:#1e293b;outline:none;font-family:inherit;transition:border-color .15s;}
+.name-in:focus{border-color:#f59e0b;}
+.name-in::placeholder{color:#cbd5e1;}
+
+/* Buttons */
+.btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:26px;}
+.btn{padding:12px 26px;border-radius:11px;font-size:.93rem;font-weight:600;cursor:pointer;
+  border:none;transition:all .15s;font-family:inherit;}
+.btn:hover{transform:translateY(-1px);}
+.btn-y{background:#f59e0b;color:#fff;} .btn-y:hover{background:#d97706;}
+.btn-ghost{background:transparent;color:#94a3b8;padding:12px 0;} .btn-ghost:hover{color:#475569;transform:none;}
+.btn-full{width:100%;padding:15px;font-size:.97rem;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+/* ── Dashboard ───────────────────────────────────────────── */
+.dashboard{min-height:100vh;background:#f1f5f9;}
+.dash-nav{background:#0d0820;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:1.05rem;}
+.nav-btn{background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);
+  padding:7px 16px;border-radius:8px;cursor:pointer;font-size:.8rem;font-family:inherit;transition:all .15s;}
+.nav-btn:hover{border-color:rgba(255,255,255,.5);color:#fff;}
+.dash-body{display:grid;grid-template-columns:268px 1fr;gap:24px;max-width:1060px;margin:0 auto;padding:28px 20px;}
+
+/* Sidebar cards */
+.side-card{background:#fff;border-radius:18px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:14px;}
+.s-avatar{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:2rem;margin-bottom:12px;}
+.s-name{font-size:1.1rem;font-weight:700;color:#1e293b;margin-bottom:3px;}
+.s-role{font-size:.78rem;color:#94a3b8;margin-bottom:12px;}
+.ibadge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;
+  font-size:.74rem;font-weight:700;margin-bottom:14px;}
+.bc{background:#dcfce7;color:#15803d;} .bb{background:#dbeafe;color:#1d4ed8;}
+.ba{background:#fef3c7;color:#92400e;} .br{background:#ffe4e6;color:#be123c;}
+.s-stat{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid #f1f5f9;font-size:.8rem;}
+.s-stat-l{color:#94a3b8;} .s-stat-v{font-weight:600;color:#1e293b;}
+.meter{margin-top:14px;}
+.meter-hd{display:flex;justify-content:space-between;font-size:.72rem;color:#94a3b8;margin-bottom:5px;}
+.meter-tr{height:7px;background:#f1f5f9;border-radius:99px;overflow:hidden;}
+.meter-fi{height:100%;border-radius:99px;transition:width .8s ease;}
+
+/* Match cards (student dashboard) */
+.match-cards{}
+.sec-title{font-size:1.15rem;font-weight:800;color:#1e293b;margin-bottom:3px;}
+.sec-sub{color:#64748b;font-size:.83rem;margin-bottom:18px;}
+.mc{background:#fff;border-radius:18px;padding:22px;margin-bottom:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.05);display:grid;
+  grid-template-columns:auto 1fr auto;gap:18px;align-items:start;
+  transition:all .2s;position:relative;}
+.mc:hover{box-shadow:0 8px 28px rgba(0,0,0,.1);transform:translateY(-2px);}
+.mc.top{border:2px solid #f59e0b;}
+.top-tag{position:absolute;top:-9px;left:18px;background:#f59e0b;color:#fff;
+  font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:99px;
+  text-transform:uppercase;letter-spacing:.4px;}
+.t-avatar{width:60px;height:60px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.9rem;flex-shrink:0;}
+.t-name{font-size:1rem;font-weight:700;color:#1e293b;margin-bottom:5px;}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.tag{padding:3px 9px;border-radius:99px;font-size:.7rem;font-weight:600;}
+.tag-cas{background:#dcfce7;color:#15803d;} .tag-bal{background:#dbeafe;color:#1d4ed8;}
+.tag-foc{background:#fef3c7;color:#92400e;} .tag-rig{background:#ffe4e6;color:#be123c;}
+.tag-i{background:#f3f4f6;color:#374151;} .tag-r{background:#f0fdf4;color:#15803d;}
+.t-bio{font-size:.8rem;color:#64748b;line-height:1.5;margin-bottom:8px;}
+.why-hd{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:4px;}
+.why-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.why-tag{background:#f0fdf4;color:#15803d;font-size:.7rem;padding:2px 8px;border-radius:99px;}
+
+/* Compatibility ring */
+.compat-col{display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0;}
+.cring{position:relative;width:72px;height:72px;}
+.cring svg{transform:rotate(-90deg);}
+.cring-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.cpct{font-size:.95rem;font-weight:800;color:#1e293b;line-height:1;}
+.clbl{font-size:.5rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
+.cbtn{padding:8px 16px;background:#f59e0b;color:#fff;border:none;border-radius:9px;
+  font-size:.77rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background .14s;white-space:nowrap;}
+.cbtn:hover{background:#d97706;}
+
+/* Student cards (teacher dashboard) */
+.sc{background:#fff;border-radius:14px;padding:18px;margin-bottom:11px;
+  display:flex;align-items:center;gap:14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.05);transition:all .18s;}
+.sc:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.08);}
+.sc-av{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+.sc-name{font-size:.92rem;font-weight:700;color:#1e293b;}
+.sc-det{font-size:.76rem;color:#64748b;margin-top:2px;}
+.sc-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+.sc-compat{margin-left:auto;flex-shrink:0;text-align:center;}
+.sc-pct{font-size:1.1rem;font-weight:800;}
+.sc-ml{font-size:.65rem;color:#94a3b8;}
+
+@media(max-width:700px){
+  .role-grid{grid-template-columns:1fr;}
+  .dash-body{grid-template-columns:1fr;}
+  .mc{grid-template-columns:auto 1fr;}
+  .compat-col{flex-direction:row;justify-content:flex-end;grid-column:1/-1;}
+  .instr-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LANDING ══════════════════════════════════════════════ -->
+<div id="vLanding" class="view active">
+  <span class="bg-note" style="top:8%;left:5%;animation-delay:0s">🎵</span>
+  <span class="bg-note" style="top:15%;right:8%;animation-delay:2s">🎶</span>
+  <span class="bg-note" style="bottom:20%;left:10%;animation-delay:4s">🎸</span>
+  <span class="bg-note" style="bottom:10%;right:12%;animation-delay:1s">🎹</span>
+  <div class="land-icon">🎵</div>
+  <h1 class="land-h1">MusicTutor</h1>
+  <p class="land-sub">We match students and teachers based on commitment level — not just instrument. Casual learner? Intensive musician? There's a perfect fit for everyone.</p>
+  <div class="role-grid">
+    <div class="role-card" onclick="show('vStudentQuiz');setSQ(1)">
+      <div class="role-icon">🎓</div>
+      <div class="role-title">I'm a Student</div>
+      <div class="role-desc">Find a teacher that matches your pace, goals, and budget.</div>
+      <span class="role-pill pill-y">Take the Quiz →</span>
+    </div>
+    <div class="role-card" onclick="show('vTeacherQuiz');setTQ(1)">
+      <div class="role-icon">🎤</div>
+      <div class="role-title">I'm a Teacher</div>
+      <div class="role-desc">Set your profile and see students who match your teaching style.</div>
+      <span class="role-pill pill-v">Build Profile →</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STUDENT QUIZ ══════════════════════════════════════════ -->
+<div id="vStudentQuiz" class="view">
+<div class="quiz-wrap">
+  <button class="quiz-back" onclick="show('vLanding')">← Back to Home</button>
+  <div class="prog-wrap">
+    <div class="prog-info"><span id="sq-lbl">Step 1 of 7</span><span id="sq-pct">14%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="sq-fill" style="width:14%"></div></div>
+  </div>
+  <div class="qcard">
+
+    <!-- SQ1: Name -->
+    <div class="qstep active" id="sq1">
+      <div class="qlabel">Step 1 of 7</div>
+      <div class="qtitle">What's your name?</div>
+      <div class="qhint">We'll personalize your results.</div>
+      <input class="name-in" id="s-name" placeholder="e.g. Jordan" oninput="S.name=this.value">
+      <div class="btn-row">
+        <span></span>
+        <button class="btn btn-y" onclick="if(S.name.trim())setSQ(2);else{document.getElementById('s-name').focus();}">Next →</button>
+      </div>
+    </div>
+
+    <!-- SQ2: Instruments -->
+    <div class="qstep" id="sq2">
+      <div class="qlabel">Step 2 of 7</div>
+      <div class="qtitle">What instrument(s)?</div>
+      <div class="qhint">Select all that apply.</div>
+      <div class="instr-grid" id="s-instr">
+        <div class="ig-opt" data-v="guitar" onclick="toggleInstr(this,'S')"><div class="ig-ic">🎸</div><div class="ig-lbl">Guitar</div></div>
+        <div class="ig-opt" data-v="piano" onclick="toggleInstr(this,'S')"><div class="ig-ic">🎹</div><div class="ig-lbl">Piano</div></div>
+        <div class="ig-opt" data-v="violin" onclick="toggleInstr(this,'S')"><div class="ig-ic">🎻</div><div class="ig-lbl">Violin</div></div>
+        <div class="ig-opt" data-v="drums" onclick="toggleInstr(this,'S')"><div class="ig-ic">🥁</div><div class="ig-lbl">Drums</div></div>
+        <div class="ig-opt" data-v="vocals" onclick="toggleInstr(this,'S')"><div class="ig-ic">🎤</div><div class="ig-lbl">Vocals</div></div>
+        <div class="ig-opt" data-v="other" onclick="toggleInstr(this,'S')"><div class="ig-ic">🎵</div><div class="ig-lbl">Other</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setSQ(1)">← Back</button>
+        <button class="btn btn-y" onclick="if(S.instruments.length)setSQ(3);">Next →</button>
+      </div>
+    </div>
+
+    <!-- SQ3: Experience -->
+    <div class="qstep" id="sq3">
+      <div class="qlabel">Step 3 of 7</div>
+      <div class="qtitle">Current experience level?</div>
+      <div class="qhint">Be honest — it helps us find the right teacher.</div>
+      <div class="opts" id="s-exp">
+        <div class="opt" data-v="beginner" onclick="pickSingle(this,'s-exp','experience','S')"><span class="opt-ic">🌱</span><div><div class="opt-lbl">Complete Beginner</div><div class="opt-sub">Never really played before</div></div></div>
+        <div class="opt" data-v="some" onclick="pickSingle(this,'s-exp','experience','S')"><span class="opt-ic">📚</span><div><div class="opt-lbl">Some Experience</div><div class="opt-sub">Know the basics, still learning</div></div></div>
+        <div class="opt" data-v="intermediate" onclick="pickSingle(this,'s-exp','experience','S')"><span class="opt-ic">🎯</span><div><div class="opt-lbl">Intermediate</div><div class="opt-sub">Comfortable, want to level up</div></div></div>
+        <div class="opt" data-v="advanced" onclick="pickSingle(this,'s-exp','experience','S')"><span class="opt-ic">⭐</span><div><div class="opt-lbl">Advanced</div><div class="opt-sub">High skill, serious goals</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setSQ(2)">← Back</button>
+        <button class="btn btn-y" onclick="if(S.experience)setSQ(4);">Next →</button>
+      </div>
+    </div>
+
+    <!-- SQ4: Goals -->
+    <div class="qstep" id="sq4">
+      <div class="qlabel">Step 4 of 7</div>
+      <div class="qtitle">What's your main goal?</div>
+      <div class="qhint">This shapes your entire match.</div>
+      <div class="opts" id="s-goals">
+        <div class="opt" data-v="fun" onclick="pickSingle(this,'s-goals','goals','S')"><span class="opt-ic">😄</span><div><div class="opt-lbl">Just for fun</div><div class="opt-sub">Low pressure, enjoy the process</div></div></div>
+        <div class="opt" data-v="basics" onclick="pickSingle(this,'s-goals','goals','S')"><span class="opt-ic">📖</span><div><div class="opt-lbl">Learn the basics</div><div class="opt-sub">Build a solid foundation</div></div></div>
+        <div class="opt" data-v="perform" onclick="pickSingle(this,'s-goals','goals','S')"><span class="opt-ic">🎭</span><div><div class="opt-lbl">Perform someday</div><div class="opt-sub">Concerts, open mics, or events</div></div></div>
+        <div class="opt" data-v="compete" onclick="pickSingle(this,'s-goals','goals','S')"><span class="opt-ic">🏆</span><div><div class="opt-lbl">Professional / Competitive</div><div class="opt-sub">Auditions, competitions, career</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setSQ(3)">← Back</button>
+        <button class="btn btn-y" onclick="if(S.goals)setSQ(5);">Next →</button>
+      </div>
+    </div>
+
+    <!-- SQ5: Practice Hours -->
+    <div class="qstep" id="sq5">
+      <div class="qlabel">Step 5 of 7</div>
+      <div class="qtitle">How many hours per week can you practice?</div>
+      <div class="qhint">Be realistic — this shapes your commitment score.</div>
+      <div class="opts g2" id="s-hours">
+        <div class="opt" data-v="<1" onclick="pickSingle(this,'s-hours','hoursPerWeek','S')"><span class="opt-ic">⏱️</span><div><div class="opt-lbl">Less than 1 hr</div><div class="opt-sub">Very casual</div></div></div>
+        <div class="opt" data-v="1-3" onclick="pickSingle(this,'s-hours','hoursPerWeek','S')"><span class="opt-ic">⏰</span><div><div class="opt-lbl">1 – 3 hrs</div><div class="opt-sub">Steady hobbyist</div></div></div>
+        <div class="opt" data-v="3-5" onclick="pickSingle(this,'s-hours','hoursPerWeek','S')"><span class="opt-ic">🕐</span><div><div class="opt-lbl">3 – 5 hrs</div><div class="opt-sub">Dedicated</div></div></div>
+        <div class="opt" data-v="5+" onclick="pickSingle(this,'s-hours','hoursPerWeek','S')"><span class="opt-ic">🔥</span><div><div class="opt-lbl">5+ hrs</div><div class="opt-sub">Intensive</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setSQ(4)">← Back</button>
+        <button class="btn btn-y" onclick="if(S.hoursPerWeek)setSQ(6);">Next →</button>
+      </div>
+    </div>
+
+    <!-- SQ6: Pace -->
+    <div class="qstep" id="sq6">
+      <div class="qlabel">Step 6 of 7</div>
+      <div class="qtitle">Preferred learning pace?</div>
+      <div class="qhint">How fast do you want to progress?</div>
+      <div class="opts" id="s-pace">
+        <div class="opt" data-v="relaxed" onclick="pickSingle(this,'s-pace','pace','S')"><span class="opt-ic">🌿</span><div><div class="opt-lbl">Very relaxed</div><div class="opt-sub">No pressure, go at my own speed</div></div></div>
+        <div class="opt" data-v="moderate" onclick="pickSingle(this,'s-pace','pace','S')"><span class="opt-ic">🚶</span><div><div class="opt-lbl">Steady / Moderate</div><div class="opt-sub">Consistent progress, no rush</div></div></div>
+        <div class="opt" data-v="focused" onclick="pickSingle(this,'s-pace','pace','S')"><span class="opt-ic">🎯</span><div><div class="opt-lbl">Focused & disciplined</div><div class="opt-sub">Structured lessons with clear milestones</div></div></div>
+        <div class="opt" data-v="intensive" onclick="pickSingle(this,'s-pace','pace','S')"><span class="opt-ic">🚀</span><div><div class="opt-lbl">Intensive / Fast-track</div><div class="opt-sub">Push hard, reach goals quickly</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setSQ(5)">← Back</button>
+        <button class="btn btn-y" onclick="if(S.pace)setSQ(7);">Next →</button>
+      </div>
+    </div>
+
+    <!-- SQ7: Budget -->
+    <div class="qstep" id="sq7">
+      <div class="qlabel">Step 7 of 7</div>
+      <div class="qtitle">Monthly lesson budget?</div>
+      <div class="qhint">Covers 4 lessons/month on average.</div>
+      <div class="opts g2" id="s-budget">
+        <div class="opt" data-v="<100" onclick="pickSingle(this,'s-budget','budget','S')"><span class="opt-ic">💰</span><div><div class="opt-lbl">Under $100</div><div class="opt-sub">~$25/lesson</div></div></div>
+        <div class="opt" data-v="100-200" onclick="pickSingle(this,'s-budget','budget','S')"><span class="opt-ic">💵</span><div><div class="opt-lbl">$100 – $200</div><div class="opt-sub">~$25–$50/lesson</div></div></div>
+        <div class="opt" data-v="200-400" onclick="pickSingle(this,'s-budget','budget','S')"><span class="opt-ic">💳</span><div><div class="opt-lbl">$200 – $400</div><div class="opt-sub">~$50–$100/lesson</div></div></div>
+        <div class="opt" data-v="400+" onclick="pickSingle(this,'s-budget','budget','S')"><span class="opt-ic">🏦</span><div><div class="opt-lbl">$400+</div><div class="opt-sub">$100+/lesson</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setSQ(6)">← Back</button>
+        <button class="btn btn-y btn-full" onclick="if(S.budget)buildStudentDash();">🔍 Find My Teacher</button>
+      </div>
+    </div>
+
+  </div><!-- /qcard -->
+</div>
+</div>
+
+<!-- ══ TEACHER QUIZ ═══════════════════════════════════════════ -->
+<div id="vTeacherQuiz" class="view">
+<div class="quiz-wrap">
+  <button class="quiz-back" onclick="show('vLanding')">← Back to Home</button>
+  <div class="prog-wrap">
+    <div class="prog-info"><span id="tq-lbl">Step 1 of 6</span><span id="tq-pct">17%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="tq-fill" style="width:17%"></div></div>
+  </div>
+  <div class="qcard">
+
+    <!-- TQ1: Name -->
+    <div class="qstep active" id="tq1">
+      <div class="qlabel">Step 1 of 6</div>
+      <div class="qtitle">What's your name?</div>
+      <div class="qhint">Students will see this on their dashboard.</div>
+      <input class="name-in" id="t-name" placeholder="e.g. Maria" oninput="T.name=this.value">
+      <div class="btn-row">
+        <span></span>
+        <button class="btn btn-y" onclick="if(T.name.trim())setTQ(2);else document.getElementById('t-name').focus();">Next →</button>
+      </div>
+    </div>
+
+    <!-- TQ2: Instruments -->
+    <div class="qstep" id="tq2">
+      <div class="qlabel">Step 2 of 6</div>
+      <div class="qtitle">What instruments do you teach?</div>
+      <div class="qhint">Select all that apply.</div>
+      <div class="instr-grid" id="t-instr">
+        <div class="ig-opt" data-v="guitar" onclick="toggleInstr(this,'T')"><div class="ig-ic">🎸</div><div class="ig-lbl">Guitar</div></div>
+        <div class="ig-opt" data-v="piano" onclick="toggleInstr(this,'T')"><div class="ig-ic">🎹</div><div class="ig-lbl">Piano</div></div>
+        <div class="ig-opt" data-v="violin" onclick="toggleInstr(this,'T')"><div class="ig-ic">🎻</div><div class="ig-lbl">Violin</div></div>
+        <div class="ig-opt" data-v="drums" onclick="toggleInstr(this,'T')"><div class="ig-ic">🥁</div><div class="ig-lbl">Drums</div></div>
+        <div class="ig-opt" data-v="vocals" onclick="toggleInstr(this,'T')"><div class="ig-ic">🎤</div><div class="ig-lbl">Vocals</div></div>
+        <div class="ig-opt" data-v="other" onclick="toggleInstr(this,'T')"><div class="ig-ic">🎵</div><div class="ig-lbl">Other</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setTQ(1)">← Back</button>
+        <button class="btn btn-y" onclick="if(T.instruments.length)setTQ(3);">Next →</button>
+      </div>
+    </div>
+
+    <!-- TQ3: Teaching Style -->
+    <div class="qstep" id="tq3">
+      <div class="qlabel">Step 3 of 6</div>
+      <div class="qtitle">How would you describe your teaching style?</div>
+      <div class="qhint">Be honest — students are matched to this.</div>
+      <div class="opts" id="t-style">
+        <div class="opt" data-v="casual" onclick="pickSingle(this,'t-style','style','T')"><span class="opt-ic">😊</span><div><div class="opt-lbl">Casual & Fun</div><div class="opt-sub">Relaxed, no pressure, enjoy the music</div></div></div>
+        <div class="opt" data-v="balanced" onclick="pickSingle(this,'t-style','style','T')"><span class="opt-ic">⚖️</span><div><div class="opt-lbl">Balanced</div><div class="opt-sub">Structure with plenty of room for fun</div></div></div>
+        <div class="opt" data-v="focused" onclick="pickSingle(this,'t-style','style','T')"><span class="opt-ic">🎯</span><div><div class="opt-lbl">Focused & Structured</div><div class="opt-sub">Goal-driven lessons with clear milestones</div></div></div>
+        <div class="opt" data-v="rigorous" onclick="pickSingle(this,'t-style','style','T')"><span class="opt-ic">🏆</span><div><div class="opt-lbl">Rigorous & Professional</div><div class="opt-sub">High standards, intensive progression</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setTQ(2)">← Back</button>
+        <button class="btn btn-y" onclick="if(T.style)setTQ(4);">Next →</button>
+      </div>
+    </div>
+
+    <!-- TQ4: Student Preference -->
+    <div class="qstep" id="tq4">
+      <div class="qlabel">Step 4 of 6</div>
+      <div class="qtitle">What students do you prefer?</div>
+      <div class="qhint">This helps us send you the right profiles.</div>
+      <div class="opts g2" id="t-spref">
+        <div class="opt" data-v="beginners" onclick="pickSingle(this,'t-spref','studentPref','T')"><span class="opt-ic">🌱</span><div><div class="opt-lbl">Beginners</div><div class="opt-sub">Love teaching from scratch</div></div></div>
+        <div class="opt" data-v="all" onclick="pickSingle(this,'t-spref','studentPref','T')"><span class="opt-ic">🌍</span><div><div class="opt-lbl">All Levels</div><div class="opt-sub">Happy with anyone</div></div></div>
+        <div class="opt" data-v="intermediate" onclick="pickSingle(this,'t-spref','studentPref','T')"><span class="opt-ic">🎯</span><div><div class="opt-lbl">Intermediate+</div><div class="opt-sub">Some foundation required</div></div></div>
+        <div class="opt" data-v="advanced" onclick="pickSingle(this,'t-spref','studentPref','T')"><span class="opt-ic">⭐</span><div><div class="opt-lbl">Advanced Only</div><div class="opt-sub">Serious, high-level students</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setTQ(3)">← Back</button>
+        <button class="btn btn-y" onclick="if(T.studentPref)setTQ(5);">Next →</button>
+      </div>
+    </div>
+
+    <!-- TQ5: Rate -->
+    <div class="qstep" id="tq5">
+      <div class="qlabel">Step 5 of 6</div>
+      <div class="qtitle">Your hourly rate?</div>
+      <div class="qhint">Used to match students with compatible budgets.</div>
+      <div class="opts g2" id="t-rate">
+        <div class="opt" data-v="low|Under $30/hr" onclick="pickRate(this)"><span class="opt-ic">💚</span><div><div class="opt-lbl">Under $30/hr</div><div class="opt-sub">Accessible pricing</div></div></div>
+        <div class="opt" data-v="mid|$30–$60/hr" onclick="pickRate(this)"><span class="opt-ic">💵</span><div><div class="opt-lbl">$30 – $60/hr</div><div class="opt-sub">Mid-range</div></div></div>
+        <div class="opt" data-v="high|$60–$100/hr" onclick="pickRate(this)"><span class="opt-ic">💳</span><div><div class="opt-lbl">$60 – $100/hr</div><div class="opt-sub">Experienced educator</div></div></div>
+        <div class="opt" data-v="premium|$100+/hr" onclick="pickRate(this)"><span class="opt-ic">💎</span><div><div class="opt-lbl">$100+/hr</div><div class="opt-sub">Professional / specialist</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setTQ(4)">← Back</button>
+        <button class="btn btn-y" onclick="if(T.rateKey)setTQ(6);">Next →</button>
+      </div>
+    </div>
+
+    <!-- TQ6: Background -->
+    <div class="qstep" id="tq6">
+      <div class="qlabel">Step 6 of 6</div>
+      <div class="qtitle">Your professional background?</div>
+      <div class="qhint">Sets expectations for both you and your students.</div>
+      <div class="opts" id="t-bg">
+        <div class="opt" data-v="hobbyist" onclick="pickSingle(this,'t-bg','background','T')"><span class="opt-ic">🎵</span><div><div class="opt-lbl">Hobbyist / Enthusiast</div><div class="opt-sub">Passionate player sharing their love of music</div></div></div>
+        <div class="opt" data-v="part-time" onclick="pickSingle(this,'t-bg','background','T')"><span class="opt-ic">📚</span><div><div class="opt-lbl">Part-time Teacher</div><div class="opt-sub">Supplemental teaching alongside other work</div></div></div>
+        <div class="opt" data-v="full-time" onclick="pickSingle(this,'t-bg','background','T')"><span class="opt-ic">🎓</span><div><div class="opt-lbl">Full-time Educator</div><div class="opt-sub">Teaching is my primary career</div></div></div>
+        <div class="opt" data-v="professional" onclick="pickSingle(this,'t-bg','background','T')"><span class="opt-ic">⭐</span><div><div class="opt-lbl">Professional Performer & Educator</div><div class="opt-sub">Concert artist, recording musician, or conservatory faculty</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="setTQ(5)">← Back</button>
+        <button class="btn btn-y btn-full" onclick="if(T.background)buildTeacherDash();">👩‍🏫 See My Students</button>
+      </div>
+    </div>
+
+  </div><!-- /qcard -->
+</div>
+</div>
+
+<!-- ══ STUDENT DASHBOARD ═════════════════════════════════════ -->
+<div id="vStudentDash" class="view">
+  <div class="dashboard">
+    <nav class="dash-nav">
+      <div class="nav-logo">🎵 MusicTutor</div>
+      <button class="nav-btn" onclick="resetAll();show('vLanding')">← Start Over</button>
+    </nav>
+    <div class="dash-body">
+      <div id="s-sidebar"></div>
+      <div id="s-main"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEACHER DASHBOARD ════════════════════════════════════= -->
+<div id="vTeacherDash" class="view">
+  <div class="dashboard">
+    <nav class="dash-nav">
+      <div class="nav-logo">🎵 MusicTutor</div>
+      <button class="nav-btn" onclick="resetAll();show('vLanding')">← Start Over</button>
+    </nav>
+    <div class="dash-body">
+      <div id="t-sidebar"></div>
+      <div id="t-main"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<script>
+// ── State ───────────────────────────────────────────────────
+const S = {name:'',instruments:[],experience:'',goals:'',hoursPerWeek:'',pace:'',budget:'',intensityScore:0};
+const T = {name:'',instruments:[],style:'',studentPref:'',rateKey:'',rateLabel:'',background:'',intensityScore:0};
+
+// ── Teachers DB ─────────────────────────────────────────────
+const TEACHERS = [
+  {id:1,name:"Sarah Mitchell",avatar:"🎹",bg:"#fde68a",instruments:["piano","vocals"],style:"casual",styleLabel:"Casual & Fun",styleCls:"tag-cas",studentPref:"beginners",rateKey:"low",rateLabel:"$25/hr",background:"hobbyist",bgLabel:"Hobbyist Tutor",bio:"Sharing the joy of music — zero pressure, all heart. Perfect for beginners!",score:12,years:3,loc:"San Francisco, CA"},
+  {id:2,name:"Aisha Washington",avatar:"🎤",bg:"#d8b4fe",instruments:["vocals","guitar"],style:"casual",styleLabel:"Casual & Fun",styleCls:"tag-cas",studentPref:"all",rateKey:"low",rateLabel:"$30/hr",background:"hobbyist",bgLabel:"Hobbyist Tutor",bio:"Warm and encouraging. I believe everyone can sing — let's find your voice!",score:18,years:5,loc:"Austin, TX"},
+  {id:3,name:"James Lee",avatar:"🎸",bg:"#bfdbfe",instruments:["guitar","vocals"],style:"casual",styleLabel:"Casual & Fun",styleCls:"tag-cas",studentPref:"all",rateKey:"mid",rateLabel:"$35/hr",background:"part-time",bgLabel:"Part-time Teacher",bio:"Self-taught guitarist, 15 years in. Relaxed lessons, real results.",score:28,years:7,loc:"Nashville, TN"},
+  {id:4,name:"Nina Barros",avatar:"🎤",bg:"#fbcfe8",instruments:["vocals"],style:"balanced",styleLabel:"Balanced",styleCls:"tag-bal",studentPref:"all",rateKey:"mid",rateLabel:"$40/hr",background:"part-time",bgLabel:"Part-time Teacher",bio:"Nurturing vocal coach — structure where it counts, fun everywhere else.",score:38,years:6,loc:"Los Angeles, CA"},
+  {id:5,name:"Marcus Thompson",avatar:"🥁",bg:"#a7f3d0",instruments:["drums","guitar"],style:"balanced",styleLabel:"Balanced",styleCls:"tag-bal",studentPref:"all",rateKey:"mid",rateLabel:"$45/hr",background:"part-time",bgLabel:"Part-time Teacher",bio:"Groove-focused drummer who teaches rhythm first. Consistent, musical progress.",score:42,years:8,loc:"Chicago, IL"},
+  {id:6,name:"Carlos Mendez",avatar:"🎸",bg:"#fed7aa",instruments:["guitar"],style:"balanced",styleLabel:"Balanced",styleCls:"tag-bal",studentPref:"all",rateKey:"mid",rateLabel:"$55/hr",background:"full-time",bgLabel:"Full-time Educator",bio:"10+ years full-time. Methodical but always keeps things musical.",score:52,years:10,loc:"Miami, FL"},
+  {id:7,name:"Priya Kapoor",avatar:"🎹",bg:"#c7d2fe",instruments:["piano","violin"],style:"focused",styleLabel:"Focused",styleCls:"tag-foc",studentPref:"intermediate",rateKey:"high",rateLabel:"$65/hr",background:"full-time",bgLabel:"Full-time Educator",bio:"Classically trained with a goal-driven, structured teaching philosophy.",score:62,years:12,loc:"Boston, MA"},
+  {id:8,name:"Robert Hayes",avatar:"🥁",bg:"#d1fae5",instruments:["drums","guitar"],style:"focused",styleLabel:"Focused",styleCls:"tag-foc",studentPref:"intermediate",rateKey:"high",rateLabel:"$65/hr",background:"full-time",bgLabel:"Full-time Educator",bio:"Session drummer turned educator. Pushes students efficiently to the next level.",score:66,years:14,loc:"New York, NY"},
+  {id:9,name:"Alex Park",avatar:"🥁",bg:"#fef9c3",instruments:["drums"],style:"focused",styleLabel:"Focused",styleCls:"tag-foc",studentPref:"intermediate",rateKey:"high",rateLabel:"$70/hr",background:"professional",bgLabel:"Professional Performer",bio:"Touring drummer with real-world experience in every lesson.",score:72,years:9,loc:"Seattle, WA"},
+  {id:10,name:"Elena Rossi",avatar:"🎻",bg:"#fecaca",instruments:["violin","piano"],style:"rigorous",styleLabel:"Rigorous",styleCls:"tag-rig",studentPref:"advanced",rateKey:"high",rateLabel:"$85/hr",background:"professional",bgLabel:"Professional Performer",bio:"Principal violinist with 20 years on stage. High expectations, extraordinary results.",score:78,years:11,loc:"New York, NY"},
+  {id:11,name:"David Chen",avatar:"🎹",bg:"#e0e7ff",instruments:["piano"],style:"rigorous",styleLabel:"Rigorous",styleCls:"tag-rig",studentPref:"advanced",rateKey:"premium",rateLabel:"$95/hr",background:"professional",bgLabel:"Professional Educator",bio:"Conservatory-trained pianist. Trains students for competitions and auditions.",score:85,years:18,loc:"Chicago, IL"},
+  {id:12,name:"Yuki Tanaka",avatar:"🎻",bg:"#ffe4e6",instruments:["violin","piano"],style:"rigorous",styleLabel:"Rigorous",styleCls:"tag-rig",studentPref:"advanced",rateKey:"premium",rateLabel:"$125/hr",background:"professional",bgLabel:"Professional Performer & Educator",bio:"International competition winner. Only accepts the most dedicated students.",score:90,years:22,loc:"Los Angeles, CA"}
+];
+
+// ── Mock Students (for teacher dashboard) ───────────────────
+const MOCK_STUDENTS = [
+  {name:"Alex K.",emoji:"🎸",instr:"guitar",exp:"Beginner",hours:"< 1 hr/wk",pace:"Relaxed",goal:"Just for fun",score:10,budget:"low"},
+  {name:"Casey M.",emoji:"🎤",instr:"vocals",exp:"Beginner",hours:"1–3 hrs/wk",pace:"Relaxed",goal:"Just for fun",score:20,budget:"low"},
+  {name:"Maya R.",emoji:"🎹",instr:"piano",exp:"Some exp.",hours:"1–3 hrs/wk",pace:"Moderate",goal:"Learn the basics",score:28,budget:"mid"},
+  {name:"Morgan L.",emoji:"🎸",instr:"guitar",exp:"Some exp.",hours:"1–3 hrs/wk",pace:"Focused",goal:"Learn the basics",score:45,budget:"mid"},
+  {name:"Riley B.",emoji:"🎹",instr:"piano",exp:"Intermediate",hours:"3–5 hrs/wk",pace:"Moderate",goal:"Perform someday",score:50,budget:"high"},
+  {name:"Jordan T.",emoji:"🥁",instr:"drums",exp:"Intermediate",hours:"3–5 hrs/wk",pace:"Focused",goal:"Perform someday",score:62,budget:"high"},
+  {name:"Sam W.",emoji:"🎻",instr:"violin",exp:"Advanced",hours:"5+ hrs/wk",pace:"Intensive",goal:"Professional",score:88,budget:"premium"},
+  {name:"Dana P.",emoji:"🎻",instr:"violin",exp:"Advanced",hours:"5+ hrs/wk",pace:"Intensive",goal:"Competitive",score:85,budget:"premium"}
+];
+
+// ── Helpers ──────────────────────────────────────────────────
+const IE = {guitar:'🎸',piano:'🎹',violin:'🎻',drums:'🥁',vocals:'🎤',other:'🎵'};
+const BR  = {low:0,mid:1,high:2,premium:3};
+const BL  = {'<100':'low','100-200':'mid','200-400':'high','400+':'premium'};
+
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+function intensityProfile(score){
+  if(score<25)  return{label:'Casual Learner',    badge:'bc',color:'#22c55e',meterColor:'#22c55e',emoji:'🌱'};
+  if(score<50)  return{label:'Steady Learner',    badge:'bb',color:'#3b82f6',meterColor:'#3b82f6',emoji:'📚'};
+  if(score<75)  return{label:'Dedicated Learner', badge:'ba',color:'#f59e0b',meterColor:'#f59e0b',emoji:'🎯'};
+  return          {label:'Intensive Learner', badge:'br',color:'#ef4444',meterColor:'#ef4444',emoji:'🔥'};
+}
+
+function teacherProfile(score){
+  if(score<25)  return{label:'Relaxed Tutor',        badge:'bc'};
+  if(score<50)  return{label:'Balanced Educator',    badge:'bb'};
+  if(score<75)  return{label:'Focused Instructor',   badge:'ba'};
+  return          {label:'Professional Mentor',  badge:'br'};
+}
+
+function scoreStudent(){
+  const exp   = {beginner:10,some:28,intermediate:58,advanced:85}[S.experience]||10;
+  const goal  = {fun:10,basics:28,perform:60,compete:88}[S.goals]||10;
+  const hrs   = {'<1':10,'1-3':28,'3-5':60,'5+':88}[S.hoursPerWeek]||10;
+  const pace  = {relaxed:10,moderate:30,focused:62,intensive:88}[S.pace]||10;
+  return Math.round((exp+goal+hrs+pace)/4);
+}
+
+function scoreTeacher(){
+  const style = {casual:10,balanced:35,focused:65,rigorous:88}[T.style]||35;
+  const sp    = {beginners:10,all:35,intermediate:62,advanced:88}[T.studentPref]||35;
+  const bg    = {'hobbyist':10,'part-time':35,'full-time':62,'professional':88}[T.background]||35;
+  return Math.round((style+sp+bg)/3);
+}
+
+function compat(sScore,sInstr,sBudgetKey,teacher){
+  const diff = Math.abs(sScore - teacher.score);
+  let base = Math.max(15, Math.round(100-(diff/80)*80));
+  const shared = sInstr.filter(i=>teacher.instruments.includes(i));
+  if(shared.length) base+=10;
+  const bd = Math.abs((BR[sBudgetKey]||0)-(BR[teacher.rateKey]||0));
+  if(bd===0) base+=8; else if(bd===1) base+=4;
+  return Math.min(100,base);
+}
+
+function whyMatch(sScore,sInstr,sBudget,teacher){
+  const reasons=[];
+  const diff=Math.abs(sScore-teacher.score);
+  if(diff<15) reasons.push('Intensity levels align perfectly');
+  else if(diff<30) reasons.push('Compatible teaching intensity');
+  const sh=sInstr.filter(i=>teacher.instruments.includes(i));
+  if(sh.length) reasons.push('Teaches '+sh.map(cap).join(' & '));
+  const bk=BL[sBudget]; const bd=Math.abs((BR[bk]||0)-(BR[teacher.rateKey]||0));
+  if(bd===0) reasons.push('Rate fits your budget ('+teacher.rateLabel+')');
+  else if(bd===1) reasons.push('Rate close to your budget ('+teacher.rateLabel+')');
+  if(teacher.studentPref==='beginners'&&S.experience==='beginner') reasons.push('Specializes in beginners');
+  else if(teacher.studentPref==='all') reasons.push('Welcomes all experience levels');
+  if(teacher.style==='rigorous'&&S.goals==='compete') reasons.push('Rigorous style fits your competitive goals');
+  if(teacher.style==='casual'&&S.goals==='fun') reasons.push("Relaxed style matches 'just for fun' goals");
+  return reasons.slice(0,4);
+}
+
+function ring(pct,color){
+  const r=30,c=2*Math.PI*r;
+  const offset=c*(1-pct/100);
+  const ringColor = pct>=75?'#10b981':pct>=55?'#3b82f6':pct>=40?'#f59e0b':'#94a3b8';
+  return `<div class="cring">
+    <svg width="72" height="72" viewBox="0 0 72 72">
+      <circle cx="36" cy="36" r="${r}" fill="none" stroke="#f1f5f9" stroke-width="6"/>
+      <circle cx="36" cy="36" r="${r}" fill="none" stroke="${ringColor}" stroke-width="6"
+        stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round"/>
+    </svg>
+    <div class="cring-txt"><span class="cpct">${pct}%</span><span class="clbl">match</span></div>
+  </div>`;
+}
+
+// ── Navigation ───────────────────────────────────────────────
+function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function setSQ(n){
+  const total=7;
+  document.querySelectorAll('#vStudentQuiz .qstep').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sq'+n).classList.add('active');
+  const pct=Math.round((n/total)*100);
+  document.getElementById('sq-lbl').textContent=`Step ${n} of ${total}`;
+  document.getElementById('sq-pct').textContent=pct+'%';
+  document.getElementById('sq-fill').style.width=pct+'%';
+}
+function setTQ(n){
+  const total=6;
+  document.querySelectorAll('#vTeacherQuiz .qstep').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tq'+n).classList.add('active');
+  const pct=Math.round((n/total)*100);
+  document.getElementById('tq-lbl').textContent=`Step ${n} of ${total}`;
+  document.getElementById('tq-pct').textContent=pct+'%';
+  document.getElementById('tq-fill').style.width=pct+'%';
+}
+
+// ── Quiz interactions ────────────────────────────────────────
+function pickSingle(el,containerId,field,obj){
+  document.getElementById(containerId).querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  window[obj][field]=el.dataset.v;
+}
+function toggleInstr(el,obj){
+  el.classList.toggle('sel');
+  const v=el.dataset.v;
+  const arr=window[obj].instruments;
+  if(el.classList.contains('sel')){if(!arr.includes(v))arr.push(v);}
+  else{window[obj].instruments=arr.filter(x=>x!==v);}
+}
+function pickRate(el){
+  document.getElementById('t-rate').querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  const [k,l]=el.dataset.v.split('|');
+  T.rateKey=k; T.rateLabel=l;
+}
+
+// ── Build Student Dashboard ──────────────────────────────────
+function buildStudentDash(){
+  S.intensityScore=scoreStudent();
+  const prof=intensityProfile(S.intensityScore);
+  const bk=BL[S.budget]||'mid';
+
+  // Score + sort teachers
+  const scored=TEACHERS.map(t=>{
+    const pct=compat(S.intensityScore,S.instruments,S.budget,t);
+    const why=whyMatch(S.intensityScore,S.instruments,S.budget,t);
+    return{...t,pct,why};
+  }).sort((a,b)=>b.pct-a.pct).slice(0,6);
+
+  // Sidebar
+  const mainInstr=S.instruments[0]||'other';
+  document.getElementById('s-sidebar').innerHTML=`
+    <div class="side-card">
+      <div class="s-avatar" style="background:${prof.color}22">${IE[mainInstr]||'🎵'}</div>
+      <div class="s-name">${S.name}</div>
+      <div class="s-role">Music Student</div>
+      <span class="ibadge ${prof.badge}">${prof.emoji} ${prof.label}</span>
+      <div class="meter">
+        <div class="meter-hd"><span>Commitment Level</span><span>${S.intensityScore}/100</span></div>
+        <div class="meter-tr"><div class="meter-fi" style="width:${S.intensityScore}%;background:${prof.meterColor}"></div></div>
+      </div>
+      <div class="s-stat"><span class="s-stat-l">Instrument</span><span class="s-stat-v">${S.instruments.map(cap).join(', ')}</span></div>
+      <div class="s-stat"><span class="s-stat-l">Experience</span><span class="s-stat-v">${cap(S.experience)}</span></div>
+      <div class="s-stat"><span class="s-stat-l">Practice</span><span class="s-stat-v">${S.hoursPerWeek} hrs/wk</span></div>
+      <div class="s-stat"><span class="s-stat-l">Pace</span><span class="s-stat-v">${cap(S.pace)}</span></div>
+      <div class="s-stat"><span class="s-stat-l">Budget</span><span class="s-stat-v">${S.budget==='<100'?'Under $100':S.budget==='400+'?'$400+':'$'+S.budget+'/mo'}</span></div>
+    </div>`;
+
+  // Main
+  const cards=scored.map((t,i)=>`
+    <div class="mc${i===0?' top':''}">
+      ${i===0?'<span class="top-tag">⭐ Best Match</span>':''}
+      <div class="t-avatar" style="background:${t.bg}">${t.avatar}</div>
+      <div>
+        <div class="t-name">${t.name}</div>
+        <div class="tags">
+          <span class="tag ${t.styleCls}">${t.styleLabel}</span>
+          ${t.instruments.map(i=>`<span class="tag tag-i">${IE[i]} ${cap(i)}</span>`).join('')}
+          <span class="tag tag-r">${t.rateLabel}</span>
+        </div>
+        <div class="t-bio">${t.bio}</div>
+        <div class="why-hd">Why you match</div>
+        <div class="why-tags">${t.why.map(r=>`<span class="why-tag">✓ ${r}</span>`).join('')}</div>
+      </div>
+      <div class="compat-col">
+        ${ring(t.pct)}
+        <button class="cbtn">Contact</button>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('s-main').innerHTML=`
+    <div class="sec-title">Your Top Matches, ${S.name} 🎵</div>
+    <div class="sec-sub">${scored.length} teachers matched to your ${prof.label} profile.</div>
+    <div class="match-cards">${cards}</div>`;
+
+  show('vStudentDash');
+}
+
+// ── Build Teacher Dashboard ──────────────────────────────────
+function buildTeacherDash(){
+  T.intensityScore=scoreTeacher();
+  const prof=teacherProfile(T.intensityScore);
+  const styleLabels={casual:'Casual & Fun',balanced:'Balanced',focused:'Focused',rigorous:'Rigorous'};
+  const styleCls={casual:'tag-cas',balanced:'tag-bal',focused:'tag-foc',rigorous:'tag-rig'};
+  const bgLabels={'hobbyist':'Hobbyist Tutor','part-time':'Part-time Teacher','full-time':'Full-time Educator','professional':'Professional Performer & Educator'};
+
+  // Score mock students
+  const scored=MOCK_STUDENTS.map(st=>{
+    const diff=Math.abs(st.score-T.intensityScore);
+    let base=Math.max(15,Math.round(100-(diff/80)*80));
+    if(T.instruments.includes(st.instr)) base+=10;
+    const bd=Math.abs((BR[st.budget]||0)-(BR[T.rateKey]||0));
+    if(bd===0) base+=8; else if(bd===1) base+=4;
+    return{...st,pct:Math.min(100,base)};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  const instrPrev=T.instruments[0]||'other';
+  const iprof=intensityProfile(T.intensityScore);
+
+  // Sidebar
+  document.getElementById('t-sidebar').innerHTML=`
+    <div class="side-card">
+      <div class="s-avatar" style="background:${iprof.color}22">${IE[instrPrev]||'🎵'}</div>
+      <div class="s-name">${T.name}</div>
+      <div class="s-role">Music Teacher</div>
+      <span class="ibadge ${prof.badge}">${prof.label}</span>
+      <div class="meter">
+        <div class="meter-hd"><span>Teaching Intensity</span><span>${T.intensityScore}/100</span></div>
+        <div class="meter-tr"><div class="meter-fi" style="width:${T.intensityScore}%;background:${iprof.meterColor}"></div></div>
+      </div>
+      <div class="s-stat"><span class="s-stat-l">Instruments</span><span class="s-stat-v">${T.instruments.map(cap).join(', ')}</span></div>
+      <div class="s-stat"><span class="s-stat-l">Style</span><span class="s-stat-v">${styleLabels[T.style]||T.style}</span></div>
+      <div class="s-stat"><span class="s-stat-l">Prefers</span><span class="s-stat-v">${cap(T.studentPref)} students</span></div>
+      <div class="s-stat"><span class="s-stat-l">Rate</span><span class="s-stat-v">${T.rateLabel}</span></div>
+      <div class="s-stat"><span class="s-stat-l">Background</span><span class="s-stat-v">${bgLabels[T.background]||T.background}</span></div>
+    </div>`;
+
+  const getColor=pct=>pct>=75?'#10b981':pct>=55?'#3b82f6':pct>=40?'#f59e0b':'#94a3b8';
+  const getIBadge=sc=>{const p=intensityProfile(sc);return`<span class="ibadge ${p.badge}" style="font-size:.68rem;padding:3px 9px">${p.emoji} ${p.label}</span>`;};
+
+  const cards=scored.map(st=>`
+    <div class="sc">
+      <div class="sc-av" style="background:${intensityProfile(st.score).color}22">${st.emoji}</div>
+      <div class="sc-info">
+        <div class="sc-name">${st.name}</div>
+        <div class="sc-det">${cap(st.instr)} · ${st.exp} · ${st.hours}</div>
+        <div class="sc-tags">
+          ${getIBadge(st.score)}
+          <span class="tag tag-i" style="font-size:.68rem">${st.goal}</span>
+        </div>
+      </div>
+      <div class="sc-compat">
+        <div class="sc-pct" style="color:${getColor(st.pct)}">${st.pct}%</div>
+        <div class="sc-ml">match</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('t-main').innerHTML=`
+    <div class="sec-title">Prospective Students for ${T.name} 🎓</div>
+    <div class="sec-sub">Ranked by compatibility with your teaching profile. ${scored.filter(s=>s.pct>=60).length} strong matches found.</div>
+    ${cards}`;
+
+  show('vTeacherDash');
+}
+
+// ── Reset ───────────────────────────────────────────────────
+function resetAll(){
+  Object.assign(S,{name:'',instruments:[],experience:'',goals:'',hoursPerWeek:'',pace:'',budget:'',intensityScore:0});
+  Object.assign(T,{name:'',instruments:[],style:'',studentPref:'',rateKey:'',rateLabel:'',background:'',intensityScore:0});
+  document.querySelectorAll('.opt,.ig-opt').forEach(e=>e.classList.remove('sel'));
+  document.getElementById('s-name').value='';
+  document.getElementById('t-name').value='';
+  setSQ(1); setTQ(1);
+}
+</script>
+</body>
+</html>
