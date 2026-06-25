@@ -39,11 +39,39 @@ const experienceLevels = [
   },
 ];
 
+const goals = [
+  {
+    id: "fun",
+    emoji: "😄",
+    label: "Just for fun",
+    description: "I want a relaxed experience and to enjoy music.",
+  },
+  {
+    id: "basics",
+    emoji: "📖",
+    label: "Learn the basics",
+    description: "I want to build a strong foundation.",
+  },
+  {
+    id: "perform",
+    emoji: "🎭",
+    label: "Perform someday",
+    description: "I want to play at events, open mics, or recitals.",
+  },
+  {
+    id: "competitive",
+    emoji: "🏆",
+    label: "Competitive or professional",
+    description: "I want serious coaching for auditions or competitions.",
+  },
+];
+
 export default function StudentOnboardingPage() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [selectedInstruments, setSelectedInstruments] = useState<string[]>([]);
   const [experience, setExperience] = useState("");
+  const [goal, setGoal] = useState("");
 
   function toggleInstrument(instrumentId: string) {
     setSelectedInstruments((current) => {
@@ -59,6 +87,8 @@ export default function StudentOnboardingPage() {
     name.trim().length > 0 && selectedInstruments.length > 0;
 
   const canContinueFromStepTwo = experience.length > 0;
+
+  const canFinish = goal.length > 0;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0d0820] via-[#1e1257] to-[#2d1b69] px-6 py-10 text-white">
@@ -79,11 +109,11 @@ export default function StudentOnboardingPage() {
             <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
               <div
                 className="h-2 rounded-full bg-yellow-500 transition-all"
-                style={{ width: step === 1 ? "50%" : "100%" }}
+                style={{ width: `${(step / 3) * 100}%` }}
               />
             </div>
 
-            <p className="mt-2 text-sm text-slate-400">Step {step} of 2</p>
+            <p className="mt-2 text-sm text-slate-400">Step {step} of 3</p>
           </div>
 
           {step === 1 && (
@@ -217,6 +247,7 @@ export default function StudentOnboardingPage() {
                 <button
                   type="button"
                   disabled={!canContinueFromStepTwo}
+                  onClick={() => setStep(3)}
                   className={`w-2/3 rounded-xl px-5 py-3 font-semibold transition ${
                     canContinueFromStepTwo
                       ? "bg-yellow-500 text-[#0d0820] hover:bg-yellow-400"
@@ -224,6 +255,71 @@ export default function StudentOnboardingPage() {
                   }`}
                 >
                   Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <h1 className="text-3xl font-bold">
+                What is your main learning goal?
+              </h1>
+
+              <p className="mt-3 text-slate-500">
+                Your goal helps us match you with a tutor who has the right
+                teaching style.
+              </p>
+
+              <div className="mt-8 space-y-3">
+                {goals.map((item) => {
+                  const isSelected = goal === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setGoal(item.id)}
+                      className={`flex w-full items-start gap-4 rounded-xl border p-4 text-left transition hover:-translate-y-0.5 ${
+                        isSelected
+                          ? "border-yellow-500 bg-yellow-50"
+                          : "border-slate-200 bg-white hover:border-yellow-300"
+                      }`}
+                    >
+                      <span className="text-3xl">{item.emoji}</span>
+
+                      <span>
+                        <span className="block font-semibold text-slate-900">
+                          {item.label}
+                        </span>
+                        <span className="mt-1 block text-sm text-slate-500">
+                          {item.description}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="w-1/3 rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Back
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!canFinish}
+                  className={`w-2/3 rounded-xl px-5 py-3 font-semibold transition ${
+                    canFinish
+                      ? "bg-yellow-500 text-[#0d0820] hover:bg-yellow-400"
+                      : "cursor-not-allowed bg-slate-200 text-slate-400"
+                  }`}
+                >
+                  See My Matches
                 </button>
               </div>
             </div>
