@@ -1,14 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-type StudentProfile = {
-  name: string;
-  instruments: string[];
-  experience: string;
-  goal: string;
-};
+import { useEffect, useMemo, useState } from "react";
+import { calculateCompatibility, type StudentProfile } from "@/lib/matching";
+import { mockTutors } from "@/lib/mock-tutors";
 
 const instrumentLabels: Record<string, string> = {
   guitar: "Guitar",
@@ -33,6 +28,13 @@ const goalLabels: Record<string, string> = {
   competitive: "Competitive or professional",
 };
 
+const styleLabels: Record<string, string> = {
+  casual: "Casual",
+  balanced: "Balanced",
+  focused: "Focused",
+  rigorous: "Rigorous",
+};
+
 export default function StudentDashboardPage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
 
@@ -43,6 +45,22 @@ export default function StudentDashboardPage() {
       setProfile(JSON.parse(savedProfile));
     }
   }, []);
+
+  const matchedTutors = useMemo(() => {
+    if (!profile) return [];
+
+    return mockTutors
+      .map((tutor) => {
+        const compatibility = calculateCompatibility(profile, tutor);
+
+        return {
+          ...tutor,
+          compatibilityScore: compatibility.score,
+          reasons: compatibility.reasons,
+        };
+      })
+      .sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+  }, [profile]);
 
   if (!profile) {
     return (
@@ -70,34 +88,33 @@ export default function StudentDashboardPage() {
   return (
     <main className="min-h-screen bg-slate-100">
       <nav className="bg-[#0d0820] px-6 py-4 text-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <Link href="/" className="font-bold">
             🎵 MusicTutor
           </Link>
 
           <Link
             href="/student/onboarding"
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:border-white/50 hover:text-white"
+            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
           >
             Edit Profile
           </Link>
         </div>
       </nav>
 
-      <section className="mx-auto max-w-5xl px-6 py-10">
+      <section className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">
             Your Matches, {profile.name}
           </h1>
 
           <p className="mt-2 text-slate-500">
-            Here&apos;s your student profile summary. Soon, this page will show
-            tutor recommendations.
+            Tutors ranked by instrument, experience level, and learning goal.
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-[280px_1fr]">
-          <aside className="rounded-2xl bg-white p-6 shadow">
+          <aside className="h-fit rounded-2xl bg-white p-6 shadow">
             <div className="mb-4 text-5xl">🎓</div>
 
             <h2 className="text-xl font-bold text-slate-900">
@@ -132,18 +149,87 @@ export default function StudentDashboardPage() {
             </div>
           </aside>
 
-          <section className="rounded-2xl bg-white p-6 shadow">
-            <h2 className="text-xl font-bold text-slate-900">
-              Recommended Tutors
-            </h2>
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">
+                Recommended Tutors
+              </h2>
 
-            <p className="mt-2 text-slate-500">
-              Tutor matching cards will go here next.
-            </p>
+              <p className="text-sm text-slate-500">
+                {matchedTutors.length} tutors found
+              </p>
+            </div>
 
-            <div className="mt-6 rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
-              No tutor cards yet. Next step: add mock tutor data and matching
-              scores.
+            <div className="space-y-4">
+              {matchedTutors.map((tutor, index) => (
+                <article
+                  key={tutor.id}
+                  className={`rounded-2xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg ${
+                    index === 0 ? "border-2 border-yellow-500" : ""
+                  }`}
+                >
+                  {index === 0 && (
+                    <div className="mb-3 inline-block rounded-full bg-yellow-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#0d0820]">
+                      Best Match
+                    </div>
+                  )}
+
+                  <div className="grid gap-5 sm:grid-cols-[auto_1fr_auto]">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-4xl">
+                      {tutor.avatar}
+                    </div>
+
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-bold text-slate-900">
+                          {tutor.name}
+                        </h3>
+
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                          {styleLabels[tutor.teachingStyle]}
+                        </span>
+
+                        <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                          {tutor.rateLabel}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        {tutor.location}
+                      </p>
+
+                      <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                        {tutor.bio}
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {tutor.reasons.map((reason) => (
+                          <span
+                            key={reason}
+                            className="rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-700"
+                          >
+                            ✓ {reason}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-3xl font-bold text-slate-900">
+                        {tutor.compatibilityScore}%
+                      </div>
+
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Match
+                      </p>
+
+                      <button className="mt-4 rounded-xl bg-[#0d0820] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e1257]">
+                        Contact
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         </div>
