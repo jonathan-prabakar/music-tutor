@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0d0820] via-[#1e1257] to-[#2d1b69] text-white flex items-center justify-center px-6">
@@ -16,26 +18,42 @@ export default function Home() {
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/15 bg-white/10 p-8 backdrop-blur transition hover:-translate-y-1 hover:bg-white/15">
             <div className="text-5xl mb-4">🎓</div>
-            <h2 className="text-2xl font-semibold">I'm a Student</h2>
+
+            <h2 className="text-2xl font-semibold">
+              I&apos;m a Student
+            </h2>
+
             <p className="mt-3 text-sm text-white/60 leading-relaxed">
               Discover tutors who match your instrument, experience level,
               budget, and goals.
             </p>
-            <button className="mt-6 rounded-full bg-yellow-500 px-6 py-3 font-semibold text-[#0d0820] transition hover:bg-yellow-400">
+
+            <Link
+              href="/student/onboarding"
+              className="mt-6 inline-block rounded-full bg-yellow-500 px-6 py-3 font-semibold text-[#0d0820] transition hover:bg-yellow-400"
+            >
               Find My Tutor
-            </button>
+            </Link>
           </div>
 
           <div className="rounded-2xl border border-white/15 bg-white/10 p-8 backdrop-blur transition hover:-translate-y-1 hover:bg-white/15">
             <div className="text-5xl mb-4">🎤</div>
-            <h2 className="text-2xl font-semibold">I'm a Tutor</h2>
+
+            <h2 className="text-2xl font-semibold">
+              I&apos;m a Tutor
+            </h2>
+
             <p className="mt-3 text-sm text-white/60 leading-relaxed">
               Create a teaching profile and connect with students who fit
               your style.
             </p>
-            <button className="mt-6 rounded-full bg-indigo-400 px-6 py-3 font-semibold text-[#0d0820] transition hover:bg-indigo-300">
+
+            <Link
+              href="/tutor/onboarding"
+              className="mt-6 inline-block rounded-full bg-indigo-400 px-6 py-3 font-semibold text-[#0d0820] transition hover:bg-indigo-300"
+            >
               Build My Profile
-            </button>
+            </Link>
           </div>
         </div>
       </section>
