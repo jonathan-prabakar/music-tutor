@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter} from "next/navigation";
 import { useState } from "react";
 
 const instruments = [
@@ -67,6 +68,8 @@ const goals = [
 ];
 
 export default function StudentOnboardingPage() {
+  const router = useRouter();
+
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [selectedInstruments, setSelectedInstruments] = useState<string[]>([]);
@@ -82,6 +85,18 @@ export default function StudentOnboardingPage() {
       return [...current, instrumentId];
     });
   }
+  function handleFinishOnboarding() {
+  const studentProfile = {
+    name,
+    instruments: selectedInstruments,
+    experience,
+    goal,
+  };
+
+  localStorage.setItem("studentProfile", JSON.stringify(studentProfile));
+
+  router.push("/student/dashboard");
+}
 
   const canContinueFromStepOne =
     name.trim().length > 0 && selectedInstruments.length > 0;
@@ -313,6 +328,7 @@ export default function StudentOnboardingPage() {
                 <button
                   type="button"
                   disabled={!canFinish}
+                  onClick={handleFinishOnboarding}
                   className={`w-2/3 rounded-xl px-5 py-3 font-semibold transition ${
                     canFinish
                       ? "bg-yellow-500 text-[#0d0820] hover:bg-yellow-400"
