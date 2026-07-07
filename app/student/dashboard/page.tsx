@@ -137,12 +137,20 @@ export default function StudentDashboardPage() {
             🎵 MusicTutor
           </Link>
 
-          <Link
-            href="/student/onboarding"
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
-          >
-            Edit Profile
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/student/matches"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
+            >
+              My Matches
+            </Link>
+            <Link
+              href="/student/onboarding"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
+            >
+              Edit Profile
+            </Link>
+          </div>
         </div>
       </nav>
 

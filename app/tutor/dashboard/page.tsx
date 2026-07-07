@@ -49,9 +49,23 @@ export default function TutorDashboardPage() {
   const [profile, setProfile] = useState<TutorProfile | null>(null);
 
   const [requestedStudentIds, setRequestedStudentIds] = useState<number[]>([]);
+  const [lessonRequests, setLessonRequests] = useState<
+    {
+      id: number;
+      tutorId: number;
+      studentName: string;
+      studentInstruments: string[];
+      studentExperience: string;
+      studentGoal: string;
+      status: string;
+      createdAt: string;
+    }[]
+  >([]);
+
   useEffect(() => {
   const savedProfile = localStorage.getItem("tutorProfile");
   const savedRequests = localStorage.getItem("requestedStudentIds");
+  const savedLessonRequests = localStorage.getItem("lessonRequests");
 
   if (savedProfile) {
     setProfile(JSON.parse(savedProfile));
@@ -60,7 +74,31 @@ export default function TutorDashboardPage() {
   if (savedRequests) {
     setRequestedStudentIds(JSON.parse(savedRequests));
   }
+
+  if (savedLessonRequests) {
+    setLessonRequests(JSON.parse(savedLessonRequests));
+  }
 }, []);
+
+  function handleAcceptRequest(id: number) {
+    setLessonRequests((current) => {
+      const updated = current.map((req) =>
+        req.id === id ? { ...req, status: "accepted" } : req
+      );
+      localStorage.setItem("lessonRequests", JSON.stringify(updated));
+      return updated;
+    });
+  }
+
+  function handleDeclineRequest(id: number) {
+    setLessonRequests((current) => {
+      const updated = current.map((req) =>
+        req.id === id ? { ...req, status: "declined" } : req
+      );
+      localStorage.setItem("lessonRequests", JSON.stringify(updated));
+      return updated;
+    });
+  }
 
   const matchedStudents = useMemo(() => {
     if (!profile) return [];
@@ -169,6 +207,80 @@ export default function TutorDashboardPage() {
             style compatibility.
           </p>
         </div>
+
+        {/* Incoming Lesson Requests */}
+        <section className="mb-10">
+          <h2 className="mb-4 text-xl font-bold text-slate-900">
+            Incoming Lesson Requests
+          </h2>
+
+          {lessonRequests.length === 0 ? (
+            <p className="text-sm text-slate-500">No incoming requests yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {lessonRequests.map((request) => (
+                <article
+                  key={request.id}
+                  className="rounded-2xl bg-white p-6 shadow"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-slate-900">
+                        {request.studentName}
+                      </h3>
+
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                          {request.studentInstruments.join(", ")}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                          {request.studentExperience}
+                        </span>
+                        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                          {request.studentGoal}
+                        </span>
+                      </div>
+
+                      <p className="mt-3 text-sm text-slate-500">
+                        Status:{" "}
+                        <span
+                          className={`font-semibold ${
+                            request.status === "pending"
+                              ? "text-yellow-600"
+                              : request.status === "accepted"
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {request.status}
+                        </span>
+                      </p>
+                    </div>
+
+                    {request.status === "pending" && (
+                      <div className="flex shrink-0 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptRequest(request.id)}
+                          className="rounded-xl bg-green-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-400"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeclineRequest(request.id)}
+                          className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         <div className="grid gap-6 md:grid-cols-[280px_1fr]">
           <aside className="h-fit rounded-2xl bg-white p-6 shadow">
