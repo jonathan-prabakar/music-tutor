@@ -37,12 +37,18 @@ const styleLabels: Record<string, string> = {
 
 export default function StudentDashboardPage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [requestedTutorIds, setRequestedTutorIds] = useState<number[]>([]);
 
   useEffect(() => {
     const savedProfile = localStorage.getItem("studentProfile");
+    const savedRequests = localStorage.getItem("requestedTutorIds");
 
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
+    }
+
+    if (savedRequests) {
+      setRequestedTutorIds(JSON.parse(savedRequests));
     }
   }, []);
 
@@ -61,6 +67,44 @@ export default function StudentDashboardPage() {
       })
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore);
   }, [profile]);
+
+  function handleRequestTutor(tutorId: number) {
+    if (!profile) return;
+
+    setRequestedTutorIds((current) => {
+      if (current.includes(tutorId)) return current;
+
+      const updatedRequests = [...current, tutorId];
+
+      localStorage.setItem(
+        "requestedTutorIds",
+        JSON.stringify(updatedRequests)
+      );
+
+      const existingRequests = localStorage.getItem("lessonRequests");
+      const parsedRequests = existingRequests
+        ? JSON.parse(existingRequests)
+        : [];
+
+      const newRequest = {
+        id: Date.now(),
+        tutorId,
+        studentName: profile.name,
+        studentInstruments: profile.instruments,
+        studentExperience: profile.experience,
+        studentGoal: profile.goal,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem(
+        "lessonRequests",
+        JSON.stringify([...parsedRequests, newRequest])
+      );
+
+      return updatedRequests;
+    });
+  }
 
   if (!profile) {
     return (
@@ -125,20 +169,11 @@ export default function StudentDashboardPage() {
 
             <div className="mt-6 space-y-4 text-sm">
               <div>
-                <p className="font-medium text-slate-500">Instruments</p>
-                <p className="mt-1 font-semibold text-slate-900">
-                  {profile.instruments
-                    .map((instrument) => instrumentLabels[instrument])
-                    .join(", ")}
-                </p>
-              </div>
-
-              <div>
-                <p className="font-medium text-slate-500">Experience</p>
-                <p className="mt-1 font-semibold text-slate-900">
-                  {experienceLabels[profile.experience]}
-                </p>
-              </div>
+  <p className="font-medium text-slate-500">Experience</p>
+  <p className="mt-1 font-semibold text-slate-900">
+    {experienceLabels[profile.experience]}
+  </p>
+</div>
 
               <div>
                 <p className="font-medium text-slate-500">Goal</p>
@@ -223,8 +258,19 @@ export default function StudentDashboardPage() {
                         Match
                       </p>
 
-                      <button className="mt-4 rounded-xl bg-[#0d0820] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e1257]">
-                        Contact
+                      <button
+                        type="button"
+                        onClick={() => handleRequestTutor(tutor.id)}
+                        disabled={requestedTutorIds.includes(tutor.id)}
+                        className={`mt-4 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                          requestedTutorIds.includes(tutor.id)
+                            ? "cursor-not-allowed bg-green-100 text-green-700"
+                            : "bg-[#0d0820] text-white hover:bg-[#1e1257]"
+                        }`}
+                      >
+                        {requestedTutorIds.includes(tutor.id)
+                          ? "Request Sent"
+                          : "Contact"}
                       </button>
                     </div>
                   </div>

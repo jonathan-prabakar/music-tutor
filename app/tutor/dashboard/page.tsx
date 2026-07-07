@@ -48,13 +48,19 @@ const goalLabels: Record<string, string> = {
 export default function TutorDashboardPage() {
   const [profile, setProfile] = useState<TutorProfile | null>(null);
 
+  const [requestedStudentIds, setRequestedStudentIds] = useState<number[]>([]);
   useEffect(() => {
-    const savedProfile = localStorage.getItem("tutorProfile");
+  const savedProfile = localStorage.getItem("tutorProfile");
+  const savedRequests = localStorage.getItem("requestedStudentIds");
 
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile));
-    }
-  }, []);
+  if (savedProfile) {
+    setProfile(JSON.parse(savedProfile));
+  }
+
+  if (savedRequests) {
+    setRequestedStudentIds(JSON.parse(savedRequests));
+  }
+}, []);
 
   const matchedStudents = useMemo(() => {
     if (!profile) return [];
@@ -71,6 +77,46 @@ export default function TutorDashboardPage() {
       })
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore);
   }, [profile]);
+
+  function handleRequestStudent(studentId: number) {
+  if (!profile) return;
+
+  setRequestedStudentIds((current) => {
+    if (current.includes(studentId)) {
+      return current;
+    }
+
+    const updatedRequests = [...current, studentId];
+
+    localStorage.setItem(
+      "requestedStudentIds",
+      JSON.stringify(updatedRequests)
+    );
+
+    const existingRequests = localStorage.getItem("tutorStudentRequests");
+    const parsedRequests = existingRequests
+      ? JSON.parse(existingRequests)
+      : [];
+
+    const newRequest = {
+      id: Date.now(),
+      studentId,
+      tutorName: profile.name,
+      tutorInstruments: profile.instruments,
+      tutorTeachingStyle: profile.teachingStyle,
+      tutorStudentPreference: profile.studentPreference,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(
+      "tutorStudentRequests",
+      JSON.stringify([...parsedRequests, newRequest])
+    );
+
+    return updatedRequests;
+  });
+}
 
   if (!profile) {
     return (
@@ -243,9 +289,18 @@ export default function TutorDashboardPage() {
                         Match
                       </p>
 
-                      <button className="mt-4 rounded-xl bg-[#0d0820] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e1257]">
-                        Contact
-                      </button>
+                      <button
+  type="button"
+  onClick={() => handleRequestStudent(student.id)}
+  disabled={requestedStudentIds.includes(student.id)}
+  className={`mt-4 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+    requestedStudentIds.includes(student.id)
+      ? "cursor-not-allowed bg-green-100 text-green-700"
+      : "bg-[#0d0820] text-white hover:bg-[#1e1257]"
+  }`}
+>
+  {requestedStudentIds.includes(student.id) ? "Request Sent" : "Contact"}
+</button>
                     </div>
                   </div>
                 </article>

@@ -28,10 +28,7 @@ export default function Home() {
               budget, and goals.
             </p>
 
-            <Link
-              href="/student/onboarding"
-              className="mt-6 inline-block rounded-full bg-yellow-500 px-6 py-3 font-semibold text-[#0d0820] transition hover:bg-yellow-400"
-            >
+            <Link href="/student/onboarding" className="mt-6 block text-blue-300 hover:text-white">
               Find My Tutor
             </Link>
           </div>
@@ -48,10 +45,7 @@ export default function Home() {
               your style.
             </p>
 
-            <Link
-              href="/tutor/onboarding"
-              className="mt-6 inline-block rounded-full bg-indigo-400 px-6 py-3 font-semibold text-[#0d0820] transition hover:bg-indigo-300"
-            >
+            <Link href="/tutor/onboarding" className="mt-6 block text-blue-300 hover:text-white">
               Build My Profile
             </Link>
           </div>
