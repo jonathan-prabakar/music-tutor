@@ -68,10 +68,6 @@ export default function TutorDashboardPage() {
   const savedRequests = localStorage.getItem("requestedStudentIds");
   const savedLessonRequests = localStorage.getItem("lessonRequests");
 
-  if (savedProfile) {
-    setProfile(JSON.parse(savedProfile));
-  }
-
   if (savedRequests) {
     setRequestedStudentIds(JSON.parse(savedRequests));
   }
@@ -79,6 +75,33 @@ export default function TutorDashboardPage() {
   if (savedLessonRequests) {
     setLessonRequests(JSON.parse(savedLessonRequests));
   }
+
+  (async () => {
+    const { data: { user } } = await getSupabase().auth.getUser();
+
+    if (user) {
+      const { data: tutorData } = await getSupabase()
+        .from("tutor_profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (tutorData) {
+        const data = tutorData as any;
+        setProfile({
+          name: data.name ?? "Tutor",
+          instruments: data.instruments ?? [],
+          teachingStyle: data.teaching_style ?? "balanced",
+          studentPreference: data.student_preference ?? "all",
+        });
+        return;
+      }
+    }
+
+    if (savedProfile) {
+      setProfile(JSON.parse(savedProfile));
+    }
+  })();
 }, []);
 
   function handleAcceptRequest(id: number) {
