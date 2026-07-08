@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { calculateCompatibility, type StudentProfile } from "@/lib/matching";
+import { getSupabase } from "@/lib/supabase";
 import { mockTutors } from "@/lib/mock-tutors";
 
 const instrumentLabels: Record<string, string> = {
@@ -150,6 +151,16 @@ export default function StudentDashboardPage() {
             >
               Edit Profile
             </Link>
+            <button
+              type="button"
+              onClick={async () => {
+                await getSupabase().auth.signOut();
+                window.location.href = "/";
+              }}
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </nav>
