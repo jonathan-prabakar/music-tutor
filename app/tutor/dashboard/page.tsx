@@ -62,47 +62,65 @@ export default function TutorDashboardPage() {
       createdAt: string;
     }[]
   >([]);
+  const [practiceSessions, setPracticeSessions] = useState<
+    {
+      id: number;
+      studentName: string;
+      instrument: string;
+      exerciseName: string;
+      durationMinutes: number;
+      difficulty: string;
+      hardSections: string;
+      notes: string;
+      createdAt: string;
+    }[]
+  >([]);
 
   useEffect(() => {
-  const savedProfile = localStorage.getItem("tutorProfile");
-  const savedRequests = localStorage.getItem("requestedStudentIds");
-  const savedLessonRequests = localStorage.getItem("lessonRequests");
+    const savedProfile = localStorage.getItem("tutorProfile");
+    const savedRequests = localStorage.getItem("requestedStudentIds");
+    const savedLessonRequests = localStorage.getItem("lessonRequests");
+    const savedPracticeSessions = localStorage.getItem("practiceSessions");
 
-  if (savedRequests) {
-    setRequestedStudentIds(JSON.parse(savedRequests));
-  }
+    if (savedRequests) {
+      setRequestedStudentIds(JSON.parse(savedRequests));
+    }
 
-  if (savedLessonRequests) {
-    setLessonRequests(JSON.parse(savedLessonRequests));
-  }
+    if (savedLessonRequests) {
+      setLessonRequests(JSON.parse(savedLessonRequests));
+    }
 
-  (async () => {
-    const { data: { user } } = await getSupabase().auth.getUser();
+    if (savedPracticeSessions) {
+      setPracticeSessions(JSON.parse(savedPracticeSessions));
+    }
 
-    if (user) {
-      const { data: tutorData } = await getSupabase()
-        .from("tutor_profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
 
-      if (tutorData) {
-        const data = tutorData as any;
-        setProfile({
-          name: data.name ?? "Tutor",
-          instruments: data.instruments ?? [],
-          teachingStyle: data.teaching_style ?? "balanced",
-          studentPreference: data.student_preference ?? "all",
-        });
-        return;
+      if (user) {
+        const { data: tutorData } = await getSupabase()
+          .from("tutor_profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (tutorData) {
+          const data = tutorData as any;
+          setProfile({
+            name: data.name ?? "Tutor",
+            instruments: data.instruments ?? [],
+            teachingStyle: data.teaching_style ?? "balanced",
+            studentPreference: data.student_preference ?? "all",
+          });
+          return;
+        }
       }
-    }
 
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile));
-    }
-  })();
-}, []);
+      if (savedProfile) {
+        setProfile(JSON.parse(savedProfile));
+      }
+    })();
+  }, []);
 
   function handleAcceptRequest(id: number) {
     setLessonRequests((current) => {
@@ -141,44 +159,44 @@ export default function TutorDashboardPage() {
   }, [profile]);
 
   function handleRequestStudent(studentId: number) {
-  if (!profile) return;
+    if (!profile) return;
 
-  setRequestedStudentIds((current) => {
-    if (current.includes(studentId)) {
-      return current;
-    }
+    setRequestedStudentIds((current) => {
+      if (current.includes(studentId)) {
+        return current;
+      }
 
-    const updatedRequests = [...current, studentId];
+      const updatedRequests = [...current, studentId];
 
-    localStorage.setItem(
-      "requestedStudentIds",
-      JSON.stringify(updatedRequests)
-    );
+      localStorage.setItem(
+        "requestedStudentIds",
+        JSON.stringify(updatedRequests)
+      );
 
-    const existingRequests = localStorage.getItem("tutorStudentRequests");
-    const parsedRequests = existingRequests
-      ? JSON.parse(existingRequests)
-      : [];
+      const existingRequests = localStorage.getItem("tutorStudentRequests");
+      const parsedRequests = existingRequests
+        ? JSON.parse(existingRequests)
+        : [];
 
-    const newRequest = {
-      id: Date.now(),
-      studentId,
-      tutorName: profile.name,
-      tutorInstruments: profile.instruments,
-      tutorTeachingStyle: profile.teachingStyle,
-      tutorStudentPreference: profile.studentPreference,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
+      const newRequest = {
+        id: Date.now(),
+        studentId,
+        tutorName: profile.name,
+        tutorInstruments: profile.instruments,
+        tutorTeachingStyle: profile.teachingStyle,
+        tutorStudentPreference: profile.studentPreference,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
 
-    localStorage.setItem(
-      "tutorStudentRequests",
-      JSON.stringify([...parsedRequests, newRequest])
-    );
+      localStorage.setItem(
+        "tutorStudentRequests",
+        JSON.stringify([...parsedRequests, newRequest])
+      );
 
-    return updatedRequests;
-  });
-}
+      return updatedRequests;
+    });
+  }
 
   if (!profile) {
     return (
@@ -318,6 +336,82 @@ export default function TutorDashboardPage() {
           )}
         </section>
 
+        {/* Recent Practice Reports */}
+        <section className="mb-10">
+          <h2 className="mb-4 text-xl font-bold text-slate-900">
+            Recent Practice Reports
+          </h2>
+
+          {practiceSessions.length === 0 ? (
+            <p className="text-sm text-slate-500">No practice reports yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {[...practiceSessions]
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                )
+                .slice(0, 5)
+                .map((session) => (
+                  <article
+                    key={session.id}
+                    className="rounded-2xl bg-white p-6 shadow"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-slate-900">
+                          {session.studentName}
+                        </h3>
+
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {session.instrument}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {session.exerciseName}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {session.durationMinutes} min
+                          </span>
+                          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                            {session.difficulty}
+                          </span>
+                        </div>
+
+                        {session.hardSections && (
+                          <p className="mt-2 text-sm text-slate-600">
+                            <span className="font-medium">Hard sections:</span>{" "}
+                            {session.hardSections}
+                          </p>
+                        )}
+
+                        {session.notes && (
+                          <p className="mt-1 text-sm text-slate-500">
+                            {session.notes}
+                          </p>
+                        )}
+
+                        <p className="mt-2 text-xs text-slate-400">
+                          {new Date(session.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+            </div>
+          )}
+        </section>
+
         <div className="grid gap-6 md:grid-cols-[280px_1fr]">
           <aside className="h-fit rounded-2xl bg-white p-6 shadow">
             <div className="mb-4 text-5xl">🎤</div>
@@ -438,17 +532,19 @@ export default function TutorDashboardPage() {
                       </p>
 
                       <button
-  type="button"
-  onClick={() => handleRequestStudent(student.id)}
-  disabled={requestedStudentIds.includes(student.id)}
-  className={`mt-4 rounded-xl px-4 py-2 text-sm font-semibold transition ${
-    requestedStudentIds.includes(student.id)
-      ? "cursor-not-allowed bg-green-100 text-green-700"
-      : "bg-[#0d0820] text-white hover:bg-[#1e1257]"
-  }`}
->
-  {requestedStudentIds.includes(student.id) ? "Request Sent" : "Contact"}
-</button>
+                        type="button"
+                        onClick={() => handleRequestStudent(student.id)}
+                        disabled={requestedStudentIds.includes(student.id)}
+                        className={`mt-4 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                          requestedStudentIds.includes(student.id)
+                            ? "cursor-not-allowed bg-green-100 text-green-700"
+                            : "bg-[#0d0820] text-white hover:bg-[#1e1257]"
+                        }`}
+                      >
+                        {requestedStudentIds.includes(student.id)
+                          ? "Request Sent"
+                          : "Contact"}
+                      </button>
                     </div>
                   </div>
                 </article>
