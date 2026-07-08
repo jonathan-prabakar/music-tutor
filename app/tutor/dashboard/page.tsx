@@ -7,6 +7,7 @@ import {
   calculateStudentCompatibility,
   type TutorProfile,
 } from "@/lib/tutor-matching";
+import { getSupabase } from "@/lib/supabase";
 
 const instrumentLabels: Record<string, string> = {
   guitar: "Guitar",
@@ -187,12 +188,24 @@ export default function TutorDashboardPage() {
             🎵 MusicTutor
           </Link>
 
-          <Link
-            href="/tutor/onboarding"
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
-          >
-            Edit Profile
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/tutor/onboarding"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Edit Profile
+            </Link>
+            <button
+              type="button"
+              onClick={async () => {
+                await getSupabase().auth.signOut();
+                window.location.href = "/";
+              }}
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </nav>
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter} from "next/navigation";
 import { useState } from "react";
+import { getSupabase } from "@/lib/supabase";
 
 const instruments = [
   { id: "guitar", label: "Guitar", emoji: "🎸" },
@@ -85,7 +86,11 @@ export default function StudentOnboardingPage() {
       return [...current, instrumentId];
     });
   }
-  function handleFinishOnboarding() {
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFinishOnboarding() {
+  setError(null);
+
   const studentProfile = {
     name,
     instruments: selectedInstruments,
@@ -94,6 +99,36 @@ export default function StudentOnboardingPage() {
   };
 
   localStorage.setItem("studentProfile", JSON.stringify(studentProfile));
+
+  const { data: { user }, error: userError } = await getSupabase().auth.getUser();
+
+  if (userError || !user) {
+    router.push("/login");
+    return;
+  }
+
+  const { error: profileError } = await getSupabase()
+    .from("profiles")
+    .upsert({ id: user.id, role: "student" } as any);
+
+  if (profileError) {
+    setError(profileError.message);
+    return;
+  }
+
+  const { error: studentProfileError } = await getSupabase()
+    .from("student_profiles")
+    .upsert({
+      id: user.id,
+      instruments: selectedInstruments,
+      experience,
+      goal,
+    } as any);
+
+  if (studentProfileError) {
+    setError(studentProfileError.message);
+    return;
+  }
 
   router.push("/student/dashboard");
 }
@@ -324,6 +359,12 @@ export default function StudentOnboardingPage() {
                 >
                   Back
                 </button>
+
+                {error && (
+                  <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+                    {error}
+                  </p>
+                )}
 
                 <button
                   type="button"
