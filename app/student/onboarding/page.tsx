@@ -107,9 +107,14 @@ export default function StudentOnboardingPage() {
     return;
   }
 
+  if (!user.email) {
+    setError("User email is required");
+    return;
+  }
+
   const { error: profileError } = await getSupabase()
     .from("profiles")
-    .upsert({ id: user.id, role: "student" } as any);
+    .upsert({ id: user.id, email: user.email, role: "student" } as any);
 
   if (profileError) {
     setError(profileError.message);

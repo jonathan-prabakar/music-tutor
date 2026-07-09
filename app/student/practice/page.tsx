@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getSupabase } from "@/lib/supabase";
 
 const instruments = [
   { id: "guitar", label: "Guitar", emoji: "🎸" },
@@ -27,6 +29,7 @@ type PracticeSession = {
 };
 
 export default function PracticePage() {
+  const router = useRouter();
   const [studentName, setStudentName] = useState("");
   const [instrument, setInstrument] = useState("");
   const [exerciseName, setExerciseName] = useState("");
@@ -38,6 +41,13 @@ export default function PracticePage() {
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
 
   useEffect(() => {
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+    })();
     const savedProfile = localStorage.getItem("studentProfile");
     if (savedProfile) {
       const profile = JSON.parse(savedProfile);

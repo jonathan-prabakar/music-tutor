@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getSupabase } from "@/lib/supabase";
 
 export default function StudentMatchesPage() {
+  const router = useRouter();
   const [acceptedMatches, setAcceptedMatches] = useState<
     {
       id: number;
@@ -17,6 +20,13 @@ export default function StudentMatchesPage() {
   >([]);
 
   useEffect(() => {
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+    })();
     const saved = localStorage.getItem("lessonRequests");
     if (saved) {
       const all = JSON.parse(saved);

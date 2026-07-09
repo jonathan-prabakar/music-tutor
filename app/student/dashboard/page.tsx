@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { calculateCompatibility, type StudentProfile } from "@/lib/matching";
 import { getSupabase } from "@/lib/supabase";
@@ -37,10 +38,18 @@ const styleLabels: Record<string, string> = {
 };
 
 export default function StudentDashboardPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [requestedTutorIds, setRequestedTutorIds] = useState<number[]>([]);
 
   useEffect(() => {
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+    })();
     const savedProfile = localStorage.getItem("studentProfile");
     const savedRequests = localStorage.getItem("requestedTutorIds");
 

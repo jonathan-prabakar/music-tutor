@@ -101,16 +101,21 @@ export default function TutorOnboardingPage() {
 
     localStorage.setItem("tutorProfile", JSON.stringify(tutorProfile));
 
-    const { data: { user }, error: userError } = await getSupabase().auth.getUser();
+  const { data: { user }, error: userError } = await getSupabase().auth.getUser();
 
-    if (userError || !user) {
-      router.push("/login");
-      return;
-    }
+  if (userError || !user) {
+    router.push("/login");
+    return;
+  }
 
-    const { error: profileError } = await getSupabase()
-      .from("profiles")
-      .upsert({ id: user.id, role: "tutor" } as any);
+  if (!user.email) {
+    setError("User email is required");
+    return;
+  }
+
+  const { error: profileError } = await getSupabase()
+    .from("profiles")
+    .upsert({ id: user.id, email: user.email, role: "tutor" } as any);
 
     if (profileError) {
       setError(profileError.message);

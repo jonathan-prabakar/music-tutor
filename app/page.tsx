@@ -6,11 +6,30 @@ import { getSupabase } from "@/lib/supabase";
 
 export default function Home() {
   const [user, setUser] = useState<object | null>(null);
+  const [dashboardHref, setDashboardHref] = useState<string>("/student/onboarding");
 
   useEffect(() => {
-    getSupabase()
-      .auth.getUser()
-      .then(({ data: { user } }) => setUser(user ?? null));
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      setUser(user ?? null);
+
+      if (user) {
+        const { data: profile } = await getSupabase()
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+        const role = (profile as any)?.role;
+        if (role === "tutor") {
+          setDashboardHref("/tutor/dashboard");
+        } else if (role === "student") {
+          setDashboardHref("/student/dashboard");
+        } else {
+          setDashboardHref("/student/onboarding");
+        }
+      }
+    })();
   }, []);
 
   async function handleLogout() {
@@ -26,7 +45,7 @@ export default function Home() {
           {user ? (
             <>
               <Link
-                href="/student/dashboard"
+                href={dashboardHref}
                 className="text-white/70 hover:text-white"
               >
                 Dashboard

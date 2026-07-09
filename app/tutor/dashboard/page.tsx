@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { mockStudents } from "@/lib/mock-students";
 import {
@@ -47,6 +48,7 @@ const goalLabels: Record<string, string> = {
 };
 
 export default function TutorDashboardPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<TutorProfile | null>(null);
 
   const [requestedStudentIds, setRequestedStudentIds] = useState<number[]>([]);
@@ -77,6 +79,13 @@ export default function TutorDashboardPage() {
   >([]);
 
   useEffect(() => {
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+    })();
     const savedProfile = localStorage.getItem("tutorProfile");
     const savedRequests = localStorage.getItem("requestedStudentIds");
     const savedLessonRequests = localStorage.getItem("lessonRequests");
