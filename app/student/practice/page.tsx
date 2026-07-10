@@ -60,9 +60,11 @@ export default function PracticePage() {
     }
   }, []);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSuccess(false);
+
+    const { data: { user } } = await getSupabase().auth.getUser();
 
     const newSession: PracticeSession = {
       id: Date.now(),
@@ -76,6 +78,27 @@ export default function PracticePage() {
       createdAt: new Date().toISOString(),
     };
 
+    // Try to save to Supabase if authenticated
+    if (user) {
+      try {
+        await getSupabase()
+          .from("practice_sessions")
+          .insert({
+            student_id: user.id,
+            student_name: studentName,
+            instrument,
+            exercise_name: exerciseName,
+            duration_minutes: Number(durationMinutes),
+            difficulty,
+            hard_sections: hardSections,
+            notes,
+          } as any);
+      } catch (error) {
+        // Supabase insert failed, continue with localStorage fallback
+      }
+    }
+
+    // Always save to localStorage as fallback
     const updated = [newSession, ...sessions];
     setSessions(updated);
     localStorage.setItem("practiceSessions", JSON.stringify(updated));

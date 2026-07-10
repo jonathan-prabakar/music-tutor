@@ -120,15 +120,43 @@ export default function TutorDashboardPage() {
     })();
     const savedProfile = localStorage.getItem("tutorProfile");
     const savedRequests = localStorage.getItem("requestedStudentIds");
-    const savedPracticeSessions = localStorage.getItem("practiceSessions");
 
     if (savedRequests) {
       setRequestedStudentIds(JSON.parse(savedRequests));
     }
 
-    if (savedPracticeSessions) {
-      setPracticeSessions(JSON.parse(savedPracticeSessions));
-    }
+    // Fetch practice sessions from Supabase
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (user) {
+        const { data: supabaseSessions } = await getSupabase()
+          .from("practice_sessions")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (supabaseSessions && supabaseSessions.length > 0) {
+          const formatted = supabaseSessions.map((s: any) => ({
+            id: s.id,
+            studentName: s.student_name,
+            instrument: s.instrument,
+            exerciseName: s.exercise_name,
+            durationMinutes: s.duration_minutes,
+            difficulty: s.difficulty,
+            hardSections: s.hard_sections,
+            notes: s.notes,
+            createdAt: s.created_at,
+          }));
+          setPracticeSessions(formatted);
+          return;
+        }
+      }
+
+      // Fallback to localStorage
+      const savedPracticeSessions = localStorage.getItem("practiceSessions");
+      if (savedPracticeSessions) {
+        setPracticeSessions(JSON.parse(savedPracticeSessions));
+      }
+    })();
 
     (async () => {
       const { data: { user } } = await getSupabase().auth.getUser();

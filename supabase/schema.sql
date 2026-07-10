@@ -166,3 +166,31 @@ create policy "tutors can update lesson_request status"
   to authenticated
   using (tutor_id = auth.uid())
   with check (tutor_id = auth.uid() and status in ('accepted', 'declined'));
+
+-- ============================================================
+-- 5. practice_sessions
+-- ============================================================
+create table practice_sessions (
+  id             uuid primary key default gen_random_uuid(),
+  student_id     uuid references auth.users(id) on delete cascade,
+  student_name   text,
+  instrument     text,
+  exercise_name  text,
+  duration_minutes integer,
+  difficulty     text,
+  hard_sections  text,
+  notes          text,
+  created_at     timestamptz not null default now()
+);
+
+alter table practice_sessions enable row level security;
+
+create policy "authenticated users can read practice_sessions"
+  on practice_sessions for select
+  to authenticated
+  using (true);
+
+create policy "students can insert their own practice_sessions"
+  on practice_sessions for insert
+  to authenticated
+  with check (student_id = auth.uid());
