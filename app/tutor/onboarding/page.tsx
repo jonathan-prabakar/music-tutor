@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getSupabase } from "@/lib/supabase";
 
 const instruments = [
   { id: "guitar", label: "Guitar", emoji: "🎸" },
@@ -86,7 +87,11 @@ export default function TutorOnboardingPage() {
     });
   }
 
-  function handleFinishOnboarding() {
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFinishOnboarding() {
+    setError(null);
+
     const tutorProfile = {
       name,
       instruments: selectedInstruments,
@@ -95,6 +100,42 @@ export default function TutorOnboardingPage() {
     };
 
     localStorage.setItem("tutorProfile", JSON.stringify(tutorProfile));
+
+  const { data: { user }, error: userError } = await getSupabase().auth.getUser();
+
+  if (userError || !user) {
+    router.push("/login");
+    return;
+  }
+
+  if (!user.email) {
+    setError("Could not find your account email. Please log out and log back in.");
+    return;
+  }
+
+  const { error: profileError } = await getSupabase()
+    .from("profiles")
+    .upsert({ id: user.id, email: user.email, role: "tutor" } as any);
+
+    if (profileError) {
+      setError(profileError.message);
+      return;
+    }
+
+  const { error: tutorProfileError } = await getSupabase()
+    .from("tutor_profiles")
+    .upsert({
+      id: user.id,
+      name,
+      instruments: selectedInstruments,
+      teaching_style: teachingStyle,
+      student_preference: studentPreference,
+    } as any);
+
+    if (tutorProfileError) {
+      setError(tutorProfileError.message);
+      return;
+    }
 
     router.push("/tutor/dashboard");
   }
@@ -325,6 +366,12 @@ export default function TutorOnboardingPage() {
                 >
                   Back
                 </button>
+
+                {error && (
+                  <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+                    {error}
+                  </p>
+                )}
 
                 <button
                   type="button"

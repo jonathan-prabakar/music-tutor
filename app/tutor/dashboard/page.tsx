@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { mockStudents } from "@/lib/mock-students";
 import {
@@ -47,6 +48,8 @@ const goalLabels: Record<string, string> = {
 };
 
 export default function TutorDashboardPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<TutorProfile | null>(null);
 
   const [requestedStudentIds, setRequestedStudentIds] = useState<number[]>([]);
@@ -60,43 +63,172 @@ export default function TutorDashboardPage() {
       studentGoal: string;
       status: string;
       createdAt: string;
+      source: "supabase" | "localStorage";
+    }[]
+  >([]);
+  const [practiceSessions, setPracticeSessions] = useState<
+    {
+      id: number;
+      studentName: string;
+      instrument: string;
+      exerciseName: string;
+      durationMinutes: number;
+      difficulty: string;
+      hardSections: string;
+      notes: string;
+      createdAt: string;
     }[]
   >([]);
 
   useEffect(() => {
-  const savedProfile = localStorage.getItem("tutorProfile");
-  const savedRequests = localStorage.getItem("requestedStudentIds");
-  const savedLessonRequests = localStorage.getItem("lessonRequests");
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
 
-  if (savedProfile) {
-    setProfile(JSON.parse(savedProfile));
-  }
+      // Fetch Supabase lesson requests
+      const { data: supabaseRequests } = await getSupabase()
+        .from("lesson_requests")
+        .select("*")
+        .eq("tutor_id", user.id);
 
-  if (savedRequests) {
-    setRequestedStudentIds(JSON.parse(savedRequests));
-  }
+      // Load localStorage requests
+      const savedLessonRequests = localStorage.getItem("lessonRequests");
+      const localRequests = savedLessonRequests
+        ? JSON.parse(savedLessonRequests).map((req: any) => ({
+            ...req,
+            source: "localStorage" as const
+          }))
+        : [];
 
-  if (savedLessonRequests) {
-    setLessonRequests(JSON.parse(savedLessonRequests));
-  }
-}, []);
+      // Convert Supabase requests to display format
+      const supabaseFormatted = (supabaseRequests ?? []).map((req: any) => ({
+        id: req.id,
+        tutorId: req.tutor_id,
+        studentName: req.student_name ?? "Student",
+        studentInstruments: req.student_instruments ?? [],
+        studentExperience: req.student_experience ?? "beginner",
+        studentGoal: req.student_goal ?? "fun",
+        status: req.status,
+        createdAt: req.created_at,
+        source: "supabase" as const
+      }));
 
-  function handleAcceptRequest(id: number) {
+      // Merge and set
+      setLessonRequests([...supabaseFormatted, ...localRequests]);
+    })();
+    const savedProfile = localStorage.getItem("tutorProfile");
+    const savedRequests = localStorage.getItem("requestedStudentIds");
+
+    if (savedRequests) {
+      setRequestedStudentIds(JSON.parse(savedRequests));
+    }
+
+    // Fetch practice sessions from Supabase
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (user) {
+        const { data: supabaseSessions } = await getSupabase()
+          .from("practice_sessions")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (supabaseSessions && supabaseSessions.length > 0) {
+          const formatted = supabaseSessions.map((s: any) => ({
+            id: s.id,
+            studentName: s.student_name,
+            instrument: s.instrument,
+            exerciseName: s.exercise_name,
+            durationMinutes: s.duration_minutes,
+            difficulty: s.difficulty,
+            hardSections: s.hard_sections,
+            notes: s.notes,
+            createdAt: s.created_at,
+          }));
+          setPracticeSessions(formatted);
+          return;
+        }
+      }
+
+      // Fallback to localStorage
+      const savedPracticeSessions = localStorage.getItem("practiceSessions");
+      if (savedPracticeSessions) {
+        setPracticeSessions(JSON.parse(savedPracticeSessions));
+      }
+    })();
+
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+
+      if (user) {
+        const { data: tutorData } = await getSupabase()
+          .from("tutor_profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (tutorData) {
+          const data = tutorData as any;
+          setProfile({
+            name: data.name ?? "Tutor",
+            instruments: data.instruments ?? [],
+            teachingStyle: data.teaching_style ?? "balanced",
+            studentPreference: data.student_preference ?? "all",
+          });
+          return;
+        }
+      }
+
+      if (savedProfile) {
+        setProfile(JSON.parse(savedProfile));
+      }
+    })();
+  }, []);
+
+  async function handleAcceptRequest(id: number) {
     setLessonRequests((current) => {
+      const request = current.find((req) => req.id === id);
+      if (!request) return current;
+
       const updated = current.map((req) =>
         req.id === id ? { ...req, status: "accepted" } : req
       );
-      localStorage.setItem("lessonRequests", JSON.stringify(updated));
+
+      // Update Supabase if from Supabase
+      if (request.source === "supabase") {
+        (getSupabase()
+          .from("lesson_requests") as any).update({ status: "accepted" }).eq("id", id);
+      } else {
+        // Update localStorage if from localStorage
+        const localRequests = updated.filter((req) => req.source === "localStorage");
+        localStorage.setItem("lessonRequests", JSON.stringify(localRequests));
+      }
+
       return updated;
     });
   }
 
-  function handleDeclineRequest(id: number) {
+  async function handleDeclineRequest(id: number) {
     setLessonRequests((current) => {
+      const request = current.find((req) => req.id === id);
+      if (!request) return current;
+
       const updated = current.map((req) =>
         req.id === id ? { ...req, status: "declined" } : req
       );
-      localStorage.setItem("lessonRequests", JSON.stringify(updated));
+
+      // Update Supabase if from Supabase
+      if (request.source === "supabase") {
+        (getSupabase()
+          .from("lesson_requests") as any).update({ status: "declined" }).eq("id", id);
+      } else {
+        // Update localStorage if from localStorage
+        const localRequests = updated.filter((req) => req.source === "localStorage");
+        localStorage.setItem("lessonRequests", JSON.stringify(localRequests));
+      }
+
       return updated;
     });
   }
@@ -118,44 +250,52 @@ export default function TutorDashboardPage() {
   }, [profile]);
 
   function handleRequestStudent(studentId: number) {
-  if (!profile) return;
+    if (!profile) return;
 
-  setRequestedStudentIds((current) => {
-    if (current.includes(studentId)) {
-      return current;
-    }
+    setRequestedStudentIds((current) => {
+      if (current.includes(studentId)) {
+        return current;
+      }
 
-    const updatedRequests = [...current, studentId];
+      const updatedRequests = [...current, studentId];
 
-    localStorage.setItem(
-      "requestedStudentIds",
-      JSON.stringify(updatedRequests)
+      localStorage.setItem(
+        "requestedStudentIds",
+        JSON.stringify(updatedRequests)
+      );
+
+      const existingRequests = localStorage.getItem("tutorStudentRequests");
+      const parsedRequests = existingRequests
+        ? JSON.parse(existingRequests)
+        : [];
+
+      const newRequest = {
+        id: Date.now(),
+        studentId,
+        tutorName: profile.name,
+        tutorInstruments: profile.instruments,
+        tutorTeachingStyle: profile.teachingStyle,
+        tutorStudentPreference: profile.studentPreference,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem(
+        "tutorStudentRequests",
+        JSON.stringify([...parsedRequests, newRequest])
+      );
+
+      return updatedRequests;
+    });
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
+      </main>
     );
-
-    const existingRequests = localStorage.getItem("tutorStudentRequests");
-    const parsedRequests = existingRequests
-      ? JSON.parse(existingRequests)
-      : [];
-
-    const newRequest = {
-      id: Date.now(),
-      studentId,
-      tutorName: profile.name,
-      tutorInstruments: profile.instruments,
-      tutorTeachingStyle: profile.teachingStyle,
-      tutorStudentPreference: profile.studentPreference,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(
-      "tutorStudentRequests",
-      JSON.stringify([...parsedRequests, newRequest])
-    );
-
-    return updatedRequests;
-  });
-}
+  }
 
   if (!profile) {
     return (
@@ -189,6 +329,18 @@ export default function TutorDashboardPage() {
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Home
+            </Link>
+            <Link
+              href="/tutor/dashboard"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Dashboard
+            </Link>
             <Link
               href="/tutor/onboarding"
               className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
@@ -291,6 +443,82 @@ export default function TutorDashboardPage() {
                   </div>
                 </article>
               ))}
+            </div>
+          )}
+        </section>
+
+        {/* Recent Practice Reports */}
+        <section className="mb-10">
+          <h2 className="mb-4 text-xl font-bold text-slate-900">
+            Recent Practice Reports
+          </h2>
+
+          {practiceSessions.length === 0 ? (
+            <p className="text-sm text-slate-500">No practice reports yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {[...practiceSessions]
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                )
+                .slice(0, 5)
+                .map((session) => (
+                  <article
+                    key={session.id}
+                    className="rounded-2xl bg-white p-6 shadow"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-slate-900">
+                          {session.studentName}
+                        </h3>
+
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {session.instrument}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {session.exerciseName}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {session.durationMinutes} min
+                          </span>
+                          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                            {session.difficulty}
+                          </span>
+                        </div>
+
+                        {session.hardSections && (
+                          <p className="mt-2 text-sm text-slate-600">
+                            <span className="font-medium">Hard sections:</span>{" "}
+                            {session.hardSections}
+                          </p>
+                        )}
+
+                        {session.notes && (
+                          <p className="mt-1 text-sm text-slate-500">
+                            {session.notes}
+                          </p>
+                        )}
+
+                        <p className="mt-2 text-xs text-slate-400">
+                          {new Date(session.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
             </div>
           )}
         </section>
@@ -415,17 +643,19 @@ export default function TutorDashboardPage() {
                       </p>
 
                       <button
-  type="button"
-  onClick={() => handleRequestStudent(student.id)}
-  disabled={requestedStudentIds.includes(student.id)}
-  className={`mt-4 rounded-xl px-4 py-2 text-sm font-semibold transition ${
-    requestedStudentIds.includes(student.id)
-      ? "cursor-not-allowed bg-green-100 text-green-700"
-      : "bg-[#0d0820] text-white hover:bg-[#1e1257]"
-  }`}
->
-  {requestedStudentIds.includes(student.id) ? "Request Sent" : "Contact"}
-</button>
+                        type="button"
+                        onClick={() => handleRequestStudent(student.id)}
+                        disabled={requestedStudentIds.includes(student.id)}
+                        className={`mt-4 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                          requestedStudentIds.includes(student.id)
+                            ? "cursor-not-allowed bg-green-100 text-green-700"
+                            : "bg-[#0d0820] text-white hover:bg-[#1e1257]"
+                        }`}
+                      >
+                        {requestedStudentIds.includes(student.id)
+                          ? "Request Sent"
+                          : "Contact"}
+                      </button>
                     </div>
                   </div>
                 </article>

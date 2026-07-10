@@ -107,9 +107,14 @@ export default function StudentOnboardingPage() {
     return;
   }
 
+  if (!user.email) {
+    setError("Could not find your account email. Please log out and log back in.");
+    return;
+  }
+
   const { error: profileError } = await getSupabase()
     .from("profiles")
-    .upsert({ id: user.id, role: "student" } as any);
+    .upsert({ id: user.id, email: user.email, role: "student" } as any);
 
   if (profileError) {
     setError(profileError.message);
@@ -120,6 +125,7 @@ export default function StudentOnboardingPage() {
     .from("student_profiles")
     .upsert({
       id: user.id,
+      name,
       instruments: selectedInstruments,
       experience,
       goal,

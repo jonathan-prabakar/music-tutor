@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getSupabase } from "@/lib/supabase";
 
 export default function StudentMatchesPage() {
+  const router = useRouter();
   const [acceptedMatches, setAcceptedMatches] = useState<
     {
-      id: number;
+      id: number | string;
       studentName: string;
       studentInstruments: string[];
       studentExperience: string;
@@ -15,16 +18,57 @@ export default function StudentMatchesPage() {
       createdAt: string;
     }[]
   >([]);
+  const [error, setError] = useState("");
+
+  async function handleLogout() {
+    await getSupabase().auth.signOut();
+    window.location.href = "/";
+  }
 
   useEffect(() => {
-    const saved = localStorage.getItem("lessonRequests");
-    if (saved) {
-      const all = JSON.parse(saved);
-      const accepted = all.filter(
-        (req: { status: string }) => req.status === "accepted"
-      );
-      setAcceptedMatches(accepted);
-    }
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      // Read accepted requests from Supabase first
+      const { data: supabaseRequests, error: readError } = await getSupabase()
+        .from("lesson_requests")
+        .select("*")
+        .eq("student_id", user.id)
+        .eq("status", "accepted");
+
+      if (readError) {
+        setError("Could not load your matches from the server. Showing local data.");
+      }
+
+      const supabaseAccepted = (supabaseRequests ?? []).map((req: any) => ({
+        id: req.id,
+        studentName: req.student_name ?? "You",
+        studentInstruments: req.student_instruments ?? [],
+        studentExperience: req.student_experience ?? "beginner",
+        studentGoal: req.student_goal ?? "fun",
+        status: req.status,
+        createdAt: req.created_at,
+      }));
+
+      // Merge in localStorage accepted requests as fallback for demo cards
+      let localAccepted: typeof supabaseAccepted = [];
+      try {
+        const saved = localStorage.getItem("lessonRequests");
+        if (saved) {
+          localAccepted = JSON.parse(saved).filter(
+            (req: { status: string }) => req.status === "accepted"
+          );
+        }
+      } catch {
+        // Ignore malformed localStorage data
+      }
+
+      setAcceptedMatches([...supabaseAccepted, ...localAccepted]);
+    })();
   }, []);
 
   function formatDate(iso: string) {
@@ -42,12 +86,39 @@ export default function StudentMatchesPage() {
           <Link href="/" className="font-bold">
             🎵 MusicTutor
           </Link>
-          <Link
-            href="/student/dashboard"
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
-          >
-            Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Home
+            </Link>
+            <Link
+              href="/student/dashboard"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/student/practice"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Practice Room
+            </Link>
+            <Link
+              href="/student/matches"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              My Matches
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -58,6 +129,12 @@ export default function StudentMatchesPage() {
         <p className="mb-8 text-slate-500">
           Tutors who have accepted your lesson requests.
         </p>
+
+        {error && (
+          <p className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
 
         {acceptedMatches.length === 0 ? (
           <div className="rounded-2xl bg-white p-8 text-center shadow">

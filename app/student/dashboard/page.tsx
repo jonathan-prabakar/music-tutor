@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { calculateCompatibility, type StudentProfile } from "@/lib/matching";
 import { getSupabase } from "@/lib/supabase";
@@ -37,20 +38,53 @@ const styleLabels: Record<string, string> = {
 };
 
 export default function StudentDashboardPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [requestedTutorIds, setRequestedTutorIds] = useState<number[]>([]);
+  const [requestedTutorIds, setRequestedTutorIds] = useState<(string | number)[]>([]);
 
   useEffect(() => {
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setLoading(false);
+    })();
     const savedProfile = localStorage.getItem("studentProfile");
     const savedRequests = localStorage.getItem("requestedTutorIds");
-
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile));
-    }
 
     if (savedRequests) {
       setRequestedTutorIds(JSON.parse(savedRequests));
     }
+
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+
+      if (user) {
+        const { data: studentData } = await getSupabase()
+          .from("student_profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (studentData) {
+          const data = studentData as any;
+          setProfile({
+            name: user.user_metadata?.name ?? data.name ?? "Student",
+            instruments: data.instruments ?? [],
+            experience: data.experience ?? "beginner",
+            goal: data.goal ?? "fun",
+          });
+          return;
+        }
+      }
+
+      if (savedProfile) {
+        setProfile(JSON.parse(savedProfile));
+      }
+    })();
   }, []);
 
   const matchedTutors = useMemo(() => {
@@ -69,8 +103,25 @@ export default function StudentDashboardPage() {
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore);
   }, [profile]);
 
-  function handleRequestTutor(tutorId: number) {
+  async function handleRequestTutor(tutorId: number | string) {
     if (!profile) return;
+
+    const { data: { user } } = await getSupabase().auth.getUser();
+    if (!user) return;
+
+    // Check if tutorId is a UUID (real Supabase user) or numeric (mock)
+    const isUuid = typeof tutorId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tutorId);
+
+    if (isUuid) {
+      // Create Supabase lesson request
+      await getSupabase()
+        .from("lesson_requests")
+        .insert({
+          student_id: user.id,
+          tutor_id: tutorId,
+          status: "pending"
+        } as any);
+    }
 
     setRequestedTutorIds((current) => {
       if (current.includes(tutorId)) return current;
@@ -107,6 +158,14 @@ export default function StudentDashboardPage() {
     });
   }
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
+      </main>
+    );
+  }
+
   if (!profile) {
     return (
       <main className="min-h-screen bg-slate-100 px-6 py-10">
@@ -140,16 +199,28 @@ export default function StudentDashboardPage() {
 
           <div className="flex items-center gap-3">
             <Link
-              href="/student/matches"
-              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
+              href="/"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
             >
-              My Matches
+              Home
             </Link>
             <Link
-              href="/student/onboarding"
-              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
+              href="/student/dashboard"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
             >
-              Edit Profile
+              Dashboard
+            </Link>
+            <Link
+              href="/student/practice"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Practice Room
+            </Link>
+            <Link
+              href="/student/matches"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              My Matches
             </Link>
             <button
               type="button"
@@ -157,7 +228,7 @@ export default function StudentDashboardPage() {
                 await getSupabase().auth.signOut();
                 window.location.href = "/";
               }}
-              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 transition hover:text-white"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
             >
               Logout
             </button>
