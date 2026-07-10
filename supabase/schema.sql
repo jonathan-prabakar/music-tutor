@@ -194,3 +194,32 @@ create policy "students can insert their own practice_sessions"
   on practice_sessions for insert
   to authenticated
   with check (student_id = auth.uid());
+
+-- ============================================================
+-- 6. ai_practice_summaries
+-- ============================================================
+create table ai_practice_summaries (
+  id                   uuid primary key default gen_random_uuid(),
+  practice_session_id  uuid,
+  student_id           uuid references auth.users(id) on delete cascade,
+  tutor_id             uuid references auth.users(id) on delete cascade,
+  summary              text not null,
+  model                text,
+  created_at           timestamptz not null default now()
+);
+
+create index idx_ai_practice_summaries_tutor_id on ai_practice_summaries(tutor_id);
+create index idx_ai_practice_summaries_student_id on ai_practice_summaries(student_id);
+create index idx_ai_practice_summaries_practice_session_id on ai_practice_summaries(practice_session_id);
+
+alter table ai_practice_summaries enable row level security;
+
+create policy "authenticated users can read summaries where they are student_id or tutor_id"
+  on ai_practice_summaries for select
+  to authenticated
+  using (student_id = auth.uid() or tutor_id = auth.uid());
+
+create policy "tutors can insert summaries where tutor_id = auth.uid()"
+  on ai_practice_summaries for insert
+  to authenticated
+  with check (tutor_id = auth.uid());

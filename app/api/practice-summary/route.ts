@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST(request: NextRequest) {
+  // Get authenticated user
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  const accessToken = authHeader.slice(7);
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
@@ -20,6 +46,8 @@ export async function POST(request: NextRequest) {
     hardSections,
     notes,
     createdAt,
+    practiceSessionId,
+    studentId,
   } = body;
 
   const prompt = `You are an expert music teacher assistant. Based on this student practice log, create a concise teacher-facing summary with:
@@ -68,6 +96,21 @@ Date: ${createdAt}`;
 
     const data = await response.json();
     const summary = data.choices?.[0]?.message?.content || "No summary generated.";
+
+    // Persist summary to Supabase
+    const { error: insertError } = await supabase
+      .from("ai_practice_summaries")
+      .insert({
+        practice_session_id: practiceSessionId,
+        student_id: studentId,
+        tutor_id: user.id,
+        summary,
+        model: "openai/gpt-4o-mini",
+      });
+
+    if (insertError) {
+      return NextResponse.json({ summary, warning: "Summary saved locally but not to database" });
+    }
 
     return NextResponse.json({ summary });
   } catch (error) {

@@ -68,7 +68,8 @@ export default function TutorDashboardPage() {
   >([]);
   const [practiceSessions, setPracticeSessions] = useState<
     {
-      id: number;
+      id: string;
+      studentId?: string;
       studentName: string;
       instrument: string;
       exerciseName: string;
@@ -79,8 +80,8 @@ export default function TutorDashboardPage() {
       createdAt: string;
     }[]
   >([]);
-  const [summaries, setSummaries] = useState<Record<number, string>>({});
-  const [summaryLoading, setSummaryLoading] = useState<Record<number, boolean>>({});
+  const [summaries, setSummaries] = useState<Record<string, string>>({});
+  const [summaryLoading, setSummaryLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     (async () => {
@@ -150,6 +151,7 @@ export default function TutorDashboardPage() {
         if (supabaseSessions && supabaseSessions.length > 0) {
           const formatted = supabaseSessions.map((s: any) => ({
             id: s.id,
+            studentId: s.student_id,
             studentName: s.student_name,
             instrument: s.instrument,
             exerciseName: s.exercise_name,
@@ -167,7 +169,34 @@ export default function TutorDashboardPage() {
       // Fallback to localStorage
       const savedPracticeSessions = localStorage.getItem("practiceSessions");
       if (savedPracticeSessions) {
-        setPracticeSessions(JSON.parse(savedPracticeSessions));
+        const parsed = JSON.parse(savedPracticeSessions);
+        // Convert numeric IDs to strings for consistency
+        const formatted = parsed.map((s: any) => ({
+          ...s,
+          id: String(s.id),
+        }));
+        setPracticeSessions(formatted);
+      }
+    })();
+
+    // Fetch existing AI summaries from Supabase
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (user) {
+        const { data: supabaseSummaries } = await getSupabase()
+          .from("ai_practice_summaries")
+          .select("practice_session_id, summary")
+          .eq("tutor_id", user.id);
+
+        if (supabaseSummaries) {
+          const summariesMap: Record<string, string> = {};
+          for (const s of supabaseSummaries as any[]) {
+            if (s.practice_session_id) {
+              summariesMap[s.practice_session_id] = s.summary;
+            }
+          }
+          setSummaries((prev) => ({ ...prev, ...summariesMap }));
+        }
       }
     })();
 
@@ -305,10 +334,21 @@ export default function TutorDashboardPage() {
     setSummaryLoading((prev) => ({ ...prev, [session.id]: true }));
 
     try {
+      // Get auth session for token
+      const { data: { session: authSession } } = await getSupabase().auth.getSession();
+      const token = authSession?.access_token;
+
       const response = await fetch("/api/practice-summary", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(session),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          ...session,
+          practiceSessionId: session.id,
+          studentId: session.studentId,
+        }),
       });
 
       if (!response.ok) {
