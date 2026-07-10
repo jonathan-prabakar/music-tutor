@@ -474,6 +474,12 @@ export default function TutorDashboardPage() {
               Dashboard
             </Link>
             <Link
+              href="/tutor/students"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Students
+            </Link>
+            <Link
               href="/tutor/onboarding"
               className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
             >
@@ -503,6 +509,25 @@ export default function TutorDashboardPage() {
             Students ranked by instrument fit, level preference, and teaching
             style compatibility.
           </p>
+        </div>
+
+        {/* Manage Students CTA */}
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-6 shadow">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">
+              Your Student Roster
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              View matched students, their practice history, and generate AI
+              lesson prep.
+            </p>
+          </div>
+          <Link
+            href="/tutor/students"
+            className="rounded-xl bg-[#0d0820] px-5 py-3 font-semibold text-white transition hover:bg-[#1e1257]"
+          >
+            Manage Students
+          </Link>
         </div>
 
         {/* Incoming Lesson Requests */}

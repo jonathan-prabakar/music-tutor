@@ -250,3 +250,30 @@ create policy "tutors can insert matches where tutor_id = auth.uid()"
   on accepted_matches for insert
   to authenticated
   with check (tutor_id = auth.uid());
+
+-- ============================================================
+-- 8. ai_lesson_prep_reports
+-- ============================================================
+create table ai_lesson_prep_reports (
+  id         uuid primary key default gen_random_uuid(),
+  student_id uuid references auth.users(id) on delete cascade,
+  tutor_id   uuid references auth.users(id) on delete cascade,
+  report     text not null,
+  model      text,
+  created_at timestamptz default now()
+);
+
+create index idx_ai_lesson_prep_reports_tutor_id on ai_lesson_prep_reports(tutor_id);
+create index idx_ai_lesson_prep_reports_student_id on ai_lesson_prep_reports(student_id);
+
+alter table ai_lesson_prep_reports enable row level security;
+
+create policy "authenticated users can read prep reports where they are student_id or tutor_id"
+  on ai_lesson_prep_reports for select
+  to authenticated
+  using (student_id = auth.uid() or tutor_id = auth.uid());
+
+create policy "tutors can insert prep reports where tutor_id = auth.uid()"
+  on ai_lesson_prep_reports for insert
+  to authenticated
+  with check (tutor_id = auth.uid());
