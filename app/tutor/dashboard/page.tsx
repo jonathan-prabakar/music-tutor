@@ -292,7 +292,10 @@ export default function TutorDashboardPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-slate-500">Loading...</p>
+        <div className="text-center">
+          <div className="mb-4 text-4xl">🎵</div>
+          <p className="text-lg text-slate-600">Loading your dashboard...</p>
+        </div>
       </main>
     );
   }
@@ -300,20 +303,19 @@ export default function TutorDashboardPage() {
   if (!profile) {
     return (
       <main className="min-h-screen bg-slate-100 px-6 py-10">
-        <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow">
+        <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow">
+          <div className="mb-4 text-5xl">🎤</div>
           <h1 className="text-2xl font-bold text-slate-900">
             No tutor profile found
           </h1>
-
           <p className="mt-3 text-slate-500">
             Complete tutor onboarding first so we can show student matches.
           </p>
-
           <Link
             href="/tutor/onboarding"
-            className="mt-6 inline-block rounded-xl bg-indigo-500 px-5 py-3 font-semibold text-white transition hover:bg-indigo-400"
+            className="mt-6 inline-block rounded-xl bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-400"
           >
-            Go to Onboarding
+            Get Started
           </Link>
         </div>
       </main>
