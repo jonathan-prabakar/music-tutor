@@ -79,6 +79,8 @@ export default function TutorDashboardPage() {
       createdAt: string;
     }[]
   >([]);
+  const [summaries, setSummaries] = useState<Record<number, string>>({});
+  const [summaryLoading, setSummaryLoading] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     (async () => {
@@ -287,6 +289,32 @@ export default function TutorDashboardPage() {
 
       return updatedRequests;
     });
+  }
+
+  async function handleGenerateSummary(session: typeof practiceSessions[0]) {
+    setSummaryLoading((prev) => ({ ...prev, [session.id]: true }));
+
+    try {
+      const response = await fetch("/api/practice-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(session),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate summary");
+      }
+
+      const data = await response.json();
+      setSummaries((prev) => ({ ...prev, [session.id]: data.summary }));
+    } catch (error) {
+      setSummaries((prev) => ({
+        ...prev,
+        [session.id]: "Could not generate summary. Please try again.",
+      }));
+    } finally {
+      setSummaryLoading((prev) => ({ ...prev, [session.id]: false }));
+    }
   }
 
   if (loading) {
@@ -505,21 +533,46 @@ export default function TutorDashboardPage() {
                           </p>
                         )}
 
-                        <p className="mt-2 text-xs text-slate-400">
-                          {new Date(session.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </p>
-                      </div>
+                      <p className="mt-2 text-xs text-slate-400">
+                        {new Date(session.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </p>
                     </div>
-                  </article>
+
+                    <div className="mt-4">
+                      {summaries[session.id] ? (
+                        <div className="rounded-lg bg-indigo-50 p-4">
+                          <p className="text-sm text-slate-700">
+                            {summaries[session.id]}
+                          </p>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateSummary(session)}
+                          disabled={summaryLoading[session.id]}
+                          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                            summaryLoading[session.id]
+                              ? "cursor-not-allowed bg-slate-200 text-slate-400"
+                              : "bg-indigo-500 text-white hover:bg-indigo-400"
+                          }`}
+                        >
+                          {summaryLoading[session.id]
+                            ? "Generating..."
+                            : "Generate AI Summary"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
                 ))}
             </div>
           )}
