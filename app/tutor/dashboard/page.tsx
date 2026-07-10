@@ -128,6 +128,16 @@ export default function TutorDashboardPage() {
       setRequestedStudentIds(JSON.parse(savedRequests));
     }
 
+    // Hydrate saved AI summaries
+    try {
+      const savedSummaries = localStorage.getItem("practiceAISummaries");
+      if (savedSummaries) {
+        setSummaries(JSON.parse(savedSummaries));
+      }
+    } catch {
+      // Ignore malformed summary cache
+    }
+
     // Fetch practice sessions from Supabase
     (async () => {
       const { data: { user } } = await getSupabase().auth.getUser();
@@ -306,7 +316,15 @@ export default function TutorDashboardPage() {
       }
 
       const data = await response.json();
-      setSummaries((prev) => ({ ...prev, [session.id]: data.summary }));
+      setSummaries((prev) => {
+        const next = { ...prev, [session.id]: data.summary };
+        try {
+          localStorage.setItem("practiceAISummaries", JSON.stringify(next));
+        } catch {
+          // Ignore write failures (e.g. storage full)
+        }
+        return next;
+      });
     } catch (error) {
       setSummaries((prev) => ({
         ...prev,
@@ -548,28 +566,29 @@ export default function TutorDashboardPage() {
                     </div>
 
                     <div className="mt-4">
-                      {summaries[session.id] ? (
-                        <div className="rounded-lg bg-indigo-50 p-4">
+                      {summaries[session.id] && (
+                        <div className="mb-3 rounded-lg bg-indigo-50 p-4">
                           <p className="text-sm text-slate-700">
                             {summaries[session.id]}
                           </p>
                         </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleGenerateSummary(session)}
-                          disabled={summaryLoading[session.id]}
-                          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                            summaryLoading[session.id]
-                              ? "cursor-not-allowed bg-slate-200 text-slate-400"
-                              : "bg-indigo-500 text-white hover:bg-indigo-400"
-                          }`}
-                        >
-                          {summaryLoading[session.id]
-                            ? "Generating..."
-                            : "Generate AI Summary"}
-                        </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateSummary(session)}
+                        disabled={summaryLoading[session.id]}
+                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                          summaryLoading[session.id]
+                            ? "cursor-not-allowed bg-slate-200 text-slate-400"
+                            : "bg-indigo-500 text-white hover:bg-indigo-400"
+                        }`}
+                      >
+                        {summaryLoading[session.id]
+                          ? "Generating..."
+                          : summaries[session.id]
+                          ? "Regenerate AI Summary"
+                          : "Generate AI Summary"}
+                      </button>
                     </div>
                   </div>
                 </article>

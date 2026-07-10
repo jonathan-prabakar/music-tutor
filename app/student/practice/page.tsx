@@ -125,6 +125,17 @@ export default function PracticePage() {
     setSuccess(true);
   }
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 text-4xl">🎵</div>
+          <p className="text-lg text-slate-600">Loading practice room...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-100">
       <nav className="bg-[#0d0820] px-6 py-4 text-white">

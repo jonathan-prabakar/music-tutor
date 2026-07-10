@@ -19,6 +19,7 @@ export default function StudentMatchesPage() {
     }[]
   >([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   async function handleLogout() {
     await getSupabase().auth.signOut();
@@ -32,6 +33,7 @@ export default function StudentMatchesPage() {
         router.push("/login");
         return;
       }
+      setLoading(false);
 
       // Read accepted requests from Supabase first
       const { data: supabaseRequests, error: readError } = await getSupabase()
@@ -77,6 +79,17 @@ export default function StudentMatchesPage() {
       month: "short",
       day: "numeric",
     });
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 text-4xl">🎵</div>
+          <p className="text-lg text-slate-600">Loading your matches...</p>
+        </div>
+      </main>
+    );
   }
 
   return (
