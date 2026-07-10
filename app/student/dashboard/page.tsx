@@ -44,14 +44,6 @@ export default function StudentDashboardPage() {
   const [requestedTutorIds, setRequestedTutorIds] = useState<(string | number)[]>([]);
 
   useEffect(() => {
-    (async () => {
-      const { data: { user } } = await getSupabase().auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      setLoading(false);
-    })();
     const savedProfile = localStorage.getItem("studentProfile");
     const savedRequests = localStorage.getItem("requestedTutorIds");
 
@@ -61,29 +53,31 @@ export default function StudentDashboardPage() {
 
     (async () => {
       const { data: { user } } = await getSupabase().auth.getUser();
-
-      if (user) {
-        const { data: studentData } = await getSupabase()
-          .from("student_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (studentData) {
-          const data = studentData as any;
-          setProfile({
-            name: user.user_metadata?.name ?? data.name ?? "Student",
-            instruments: data.instruments ?? [],
-            experience: data.experience ?? "beginner",
-            goal: data.goal ?? "fun",
-          });
-          return;
-        }
+      if (!user) {
+        router.push("/login");
+        setLoading(false);
+        return;
       }
 
-      if (savedProfile) {
+      const { data: studentData } = await getSupabase()
+        .from("student_profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (studentData) {
+        const data = studentData as any;
+        setProfile({
+          name: user.user_metadata?.name ?? data.name ?? "Student",
+          instruments: data.instruments ?? [],
+          experience: data.experience ?? "beginner",
+          goal: data.goal ?? "fun",
+        });
+      } else if (savedProfile) {
         setProfile(JSON.parse(savedProfile));
       }
+
+      setLoading(false);
     })();
   }, []);
 

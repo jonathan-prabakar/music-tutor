@@ -86,10 +86,28 @@ export default function TutorDashboardPage() {
   const [matchedStudentIds, setMatchedStudentIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    const savedProfile = localStorage.getItem("tutorProfile");
+    const savedRequests = localStorage.getItem("requestedStudentIds");
+
+    if (savedRequests) {
+      setRequestedStudentIds(JSON.parse(savedRequests));
+    }
+
+    // Hydrate saved AI summaries
+    try {
+      const savedSummaries = localStorage.getItem("practiceAISummaries");
+      if (savedSummaries) {
+        setSummaries(JSON.parse(savedSummaries));
+      }
+    } catch {
+      // Ignore malformed summary cache
+    }
+
     (async () => {
       const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) {
         router.push("/login");
+        setLoading(false);
         return;
       }
 
@@ -125,22 +143,6 @@ export default function TutorDashboardPage() {
       // Merge and set
       setLessonRequests([...supabaseFormatted, ...localRequests]);
     })();
-    const savedProfile = localStorage.getItem("tutorProfile");
-    const savedRequests = localStorage.getItem("requestedStudentIds");
-
-    if (savedRequests) {
-      setRequestedStudentIds(JSON.parse(savedRequests));
-    }
-
-    // Hydrate saved AI summaries
-    try {
-      const savedSummaries = localStorage.getItem("practiceAISummaries");
-      if (savedSummaries) {
-        setSummaries(JSON.parse(savedSummaries));
-      }
-    } catch {
-      // Ignore malformed summary cache
-    }
 
     // Fetch practice sessions from Supabase (filtered by matched students)
     (async () => {
@@ -255,13 +257,12 @@ export default function TutorDashboardPage() {
             teachingStyle: data.teaching_style ?? "balanced",
             studentPreference: data.student_preference ?? "all",
           });
-          return;
+        } else if (savedProfile) {
+          setProfile(JSON.parse(savedProfile));
         }
       }
 
-      if (savedProfile) {
-        setProfile(JSON.parse(savedProfile));
-      }
+      setLoading(false);
     })();
   }, []);
 
