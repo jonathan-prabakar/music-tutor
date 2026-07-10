@@ -321,6 +321,18 @@ export default function TutorDashboardPage() {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Home
+            </Link>
+            <Link
+              href="/tutor/dashboard"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Dashboard
+            </Link>
+            <Link
               href="/tutor/onboarding"
               className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
             >

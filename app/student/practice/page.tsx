@@ -38,7 +38,13 @@ export default function PracticePage() {
   const [hardSections, setHardSections] = useState("");
   const [notes, setNotes] = useState("");
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
+
+  async function handleLogout() {
+    await getSupabase().auth.signOut();
+    window.location.href = "/";
+  }
 
   useEffect(() => {
     (async () => {
@@ -63,6 +69,7 @@ export default function PracticePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSuccess(false);
+    setError("");
 
     const { data: { user } } = await getSupabase().auth.getUser();
 
@@ -81,7 +88,7 @@ export default function PracticePage() {
     // Try to save to Supabase if authenticated
     if (user) {
       try {
-        await getSupabase()
+        const { error: insertError } = await getSupabase()
           .from("practice_sessions")
           .insert({
             student_id: user.id,
@@ -93,8 +100,12 @@ export default function PracticePage() {
             hard_sections: hardSections,
             notes,
           } as any);
-      } catch (error) {
-        // Supabase insert failed, continue with localStorage fallback
+        if (insertError) throw insertError;
+      } catch {
+        // Supabase insert failed; fall back to localStorage but warn the user
+        setError(
+          "Could not sync this session to the server. It was saved locally for now."
+        );
       }
     }
 
@@ -119,12 +130,39 @@ export default function PracticePage() {
           <Link href="/" className="font-bold">
             🎵 MusicTutor
           </Link>
-          <Link
-            href="/student/dashboard"
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
-          >
-            Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Home
+            </Link>
+            <Link
+              href="/student/dashboard"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/student/practice"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Practice Room
+            </Link>
+            <Link
+              href="/student/matches"
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              My Matches
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -139,6 +177,12 @@ export default function PracticePage() {
         {success && (
           <p className="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
             Practice session saved!
+          </p>
+        )}
+
+        {error && (
+          <p className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
           </p>
         )}
 
