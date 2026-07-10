@@ -62,6 +62,7 @@ export default function TutorDashboardPage() {
       studentGoal: string;
       status: string;
       createdAt: string;
+      source: "supabase" | "localStorage";
     }[]
   >([]);
   const [practiceSessions, setPracticeSessions] = useState<
@@ -85,18 +86,44 @@ export default function TutorDashboardPage() {
         router.push("/login");
         return;
       }
+
+      // Fetch Supabase lesson requests
+      const { data: supabaseRequests } = await getSupabase()
+        .from("lesson_requests")
+        .select("*")
+        .eq("tutor_id", user.id);
+
+      // Load localStorage requests
+      const savedLessonRequests = localStorage.getItem("lessonRequests");
+      const localRequests = savedLessonRequests
+        ? JSON.parse(savedLessonRequests).map((req: any) => ({
+            ...req,
+            source: "localStorage" as const
+          }))
+        : [];
+
+      // Convert Supabase requests to display format
+      const supabaseFormatted = (supabaseRequests ?? []).map((req: any) => ({
+        id: req.id,
+        tutorId: req.tutor_id,
+        studentName: req.student_name ?? "Student",
+        studentInstruments: req.student_instruments ?? [],
+        studentExperience: req.student_experience ?? "beginner",
+        studentGoal: req.student_goal ?? "fun",
+        status: req.status,
+        createdAt: req.created_at,
+        source: "supabase" as const
+      }));
+
+      // Merge and set
+      setLessonRequests([...supabaseFormatted, ...localRequests]);
     })();
     const savedProfile = localStorage.getItem("tutorProfile");
     const savedRequests = localStorage.getItem("requestedStudentIds");
-    const savedLessonRequests = localStorage.getItem("lessonRequests");
     const savedPracticeSessions = localStorage.getItem("practiceSessions");
 
     if (savedRequests) {
       setRequestedStudentIds(JSON.parse(savedRequests));
-    }
-
-    if (savedLessonRequests) {
-      setLessonRequests(JSON.parse(savedLessonRequests));
     }
 
     if (savedPracticeSessions) {
@@ -131,22 +158,48 @@ export default function TutorDashboardPage() {
     })();
   }, []);
 
-  function handleAcceptRequest(id: number) {
+  async function handleAcceptRequest(id: number) {
     setLessonRequests((current) => {
+      const request = current.find((req) => req.id === id);
+      if (!request) return current;
+
       const updated = current.map((req) =>
         req.id === id ? { ...req, status: "accepted" } : req
       );
-      localStorage.setItem("lessonRequests", JSON.stringify(updated));
+
+      // Update Supabase if from Supabase
+      if (request.source === "supabase") {
+        (getSupabase()
+          .from("lesson_requests") as any).update({ status: "accepted" }).eq("id", id);
+      } else {
+        // Update localStorage if from localStorage
+        const localRequests = updated.filter((req) => req.source === "localStorage");
+        localStorage.setItem("lessonRequests", JSON.stringify(localRequests));
+      }
+
       return updated;
     });
   }
 
-  function handleDeclineRequest(id: number) {
+  async function handleDeclineRequest(id: number) {
     setLessonRequests((current) => {
+      const request = current.find((req) => req.id === id);
+      if (!request) return current;
+
       const updated = current.map((req) =>
         req.id === id ? { ...req, status: "declined" } : req
       );
-      localStorage.setItem("lessonRequests", JSON.stringify(updated));
+
+      // Update Supabase if from Supabase
+      if (request.source === "supabase") {
+        (getSupabase()
+          .from("lesson_requests") as any).update({ status: "declined" }).eq("id", id);
+      } else {
+        // Update localStorage if from localStorage
+        const localRequests = updated.filter((req) => req.source === "localStorage");
+        localStorage.setItem("lessonRequests", JSON.stringify(localRequests));
+      }
+
       return updated;
     });
   }

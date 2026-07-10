@@ -40,7 +40,7 @@ const styleLabels: Record<string, string> = {
 export default function StudentDashboardPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [requestedTutorIds, setRequestedTutorIds] = useState<number[]>([]);
+  const [requestedTutorIds, setRequestedTutorIds] = useState<(string | number)[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -101,8 +101,25 @@ export default function StudentDashboardPage() {
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore);
   }, [profile]);
 
-  function handleRequestTutor(tutorId: number) {
+  async function handleRequestTutor(tutorId: number | string) {
     if (!profile) return;
+
+    const { data: { user } } = await getSupabase().auth.getUser();
+    if (!user) return;
+
+    // Check if tutorId is a UUID (real Supabase user) or numeric (mock)
+    const isUuid = typeof tutorId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tutorId);
+
+    if (isUuid) {
+      // Create Supabase lesson request
+      await getSupabase()
+        .from("lesson_requests")
+        .insert({
+          student_id: user.id,
+          tutor_id: tutorId,
+          status: "pending"
+        } as any);
+    }
 
     setRequestedTutorIds((current) => {
       if (current.includes(tutorId)) return current;
