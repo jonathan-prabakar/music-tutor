@@ -122,14 +122,15 @@ export default function TutorOnboardingPage() {
       return;
     }
 
-    const { error: tutorProfileError } = await getSupabase()
-      .from("tutor_profiles")
-      .upsert({
-        id: user.id,
-        instruments: selectedInstruments,
-        teaching_style: teachingStyle,
-        student_preference: studentPreference,
-      } as any);
+  const { error: tutorProfileError } = await getSupabase()
+    .from("tutor_profiles")
+    .upsert({
+      id: user.id,
+      name,
+      instruments: selectedInstruments,
+      teaching_style: teachingStyle,
+      student_preference: studentPreference,
+    } as any);
 
     if (tutorProfileError) {
       setError(tutorProfileError.message);

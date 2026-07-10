@@ -125,6 +125,7 @@ export default function StudentOnboardingPage() {
     .from("student_profiles")
     .upsert({
       id: user.id,
+      name,
       instruments: selectedInstruments,
       experience,
       goal,

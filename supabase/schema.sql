@@ -55,6 +55,7 @@ create policy "users can update their own profile"
 -- ============================================================
 create table student_profiles (
   id            uuid primary key references auth.users(id) on delete cascade,
+  name          text,
   instruments   text[] not null default '{}',
   experience    text not null default 'beginner' check (experience in ('beginner', 'some', 'intermediate', 'advanced')),
   goal          text not null default 'fun' check (goal in ('fun', 'basics', 'perform', 'competitive')),
@@ -92,6 +93,7 @@ create policy "students can update their own student_profile"
 -- ============================================================
 create table tutor_profiles (
   id                uuid primary key references auth.users(id) on delete cascade,
+  name              text,
   instruments       text[] not null default '{}',
   teaching_style    text not null default 'balanced' check (teaching_style in ('casual', 'balanced', 'focused', 'rigorous')),
   student_preference text not null default 'all' check (student_preference in ('beginners', 'all', 'intermediate', 'advanced')),
