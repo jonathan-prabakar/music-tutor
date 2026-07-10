@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 export default function Home() {
-  const [user, setUser] = useState<object | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [dashboardHref, setDashboardHref] = useState<string>("/student/onboarding");
 
   useEffect(() => {
@@ -41,9 +41,12 @@ export default function Home() {
     <main className="min-h-screen flex flex-col bg-gradient-to-br from-[#0d0820] via-[#1e1257] to-[#2d1b69] px-6 text-white">
       <nav className="mx-auto flex w-full max-w-3xl items-center justify-between py-4">
         <span className="font-bold">🎵 MusicTutor</span>
-        <div className="flex gap-4 text-sm">
+        <div className="flex items-center gap-4 text-sm">
           {user ? (
             <>
+              <span className="text-white/70">
+                Signed in{user.email ? ` as ${user.email}` : ""}
+              </span>
               <Link
                 href={dashboardHref}
                 className="text-white/70 hover:text-white"

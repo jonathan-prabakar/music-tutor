@@ -39,6 +39,7 @@ const styleLabels: Record<string, string> = {
 
 export default function StudentDashboardPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [requestedTutorIds, setRequestedTutorIds] = useState<(string | number)[]>([]);
 
@@ -49,6 +50,7 @@ export default function StudentDashboardPage() {
         router.push("/login");
         return;
       }
+      setLoading(false);
     })();
     const savedProfile = localStorage.getItem("studentProfile");
     const savedRequests = localStorage.getItem("requestedTutorIds");
@@ -154,6 +156,14 @@ export default function StudentDashboardPage() {
 
       return updatedRequests;
     });
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
+      </main>
+    );
   }
 
   if (!profile) {

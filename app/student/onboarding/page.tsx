@@ -108,7 +108,7 @@ export default function StudentOnboardingPage() {
   }
 
   if (!user.email) {
-    setError("User email is required");
+    setError("Could not find your account email. Please log out and log back in.");
     return;
   }
 

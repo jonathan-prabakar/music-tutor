@@ -37,6 +37,7 @@ export default function PracticePage() {
   const [difficulty, setDifficulty] = useState("");
   const [hardSections, setHardSections] = useState("");
   const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
@@ -53,6 +54,7 @@ export default function PracticePage() {
         router.push("/login");
         return;
       }
+      setLoading(false);
     })();
     const savedProfile = localStorage.getItem("studentProfile");
     if (savedProfile) {

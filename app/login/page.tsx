@@ -15,7 +15,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    const { error } = await getSupabase().auth.signInWithPassword({
+    const { data, error } = await getSupabase().auth.signInWithPassword({
       email,
       password,
     });
@@ -23,7 +23,26 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.push("/");
+      // Check user role and redirect accordingly
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (user) {
+        const { data: profile } = await getSupabase()
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+        const role = (profile as any)?.role;
+        if (role === "tutor") {
+          router.push("/tutor/dashboard");
+        } else if (role === "student") {
+          router.push("/student/dashboard");
+        } else {
+          router.push("/student/onboarding");
+        }
+      } else {
+        router.push("/");
+      }
     }
   }
 

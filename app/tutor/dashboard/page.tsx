@@ -49,6 +49,7 @@ const goalLabels: Record<string, string> = {
 
 export default function TutorDashboardPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<TutorProfile | null>(null);
 
   const [requestedStudentIds, setRequestedStudentIds] = useState<number[]>([]);
@@ -286,6 +287,14 @@ export default function TutorDashboardPage() {
 
       return updatedRequests;
     });
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
+      </main>
+    );
   }
 
   if (!profile) {
