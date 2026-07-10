@@ -10,10 +10,10 @@ export default function StudentMatchesPage() {
   const [acceptedMatches, setAcceptedMatches] = useState<
     {
       id: number | string;
-      studentName: string;
-      studentInstruments: string[];
-      studentExperience: string;
-      studentGoal: string;
+      tutorName: string;
+      tutorInstruments: string[];
+      tutorTeachingStyle: string;
+      tutorStudentPreference: string;
       status: string;
       createdAt: string;
     }[]
@@ -35,35 +35,57 @@ export default function StudentMatchesPage() {
       }
       setLoading(false);
 
-      // Read accepted requests from Supabase first
-      const { data: supabaseRequests, error: readError } = await getSupabase()
-        .from("lesson_requests")
-        .select("*")
+      // Read accepted matches from accepted_matches table
+      const { data: matches, error: readError } = await getSupabase()
+        .from("accepted_matches")
+        .select("id, tutor_id, status, created_at")
         .eq("student_id", user.id)
-        .eq("status", "accepted");
+        .eq("status", "active");
 
       if (readError) {
         setError("Could not load your matches from the server. Showing local data.");
       }
 
-      const supabaseAccepted = (supabaseRequests ?? []).map((req: any) => ({
-        id: req.id,
-        studentName: req.student_name ?? "You",
-        studentInstruments: req.student_instruments ?? [],
-        studentExperience: req.student_experience ?? "beginner",
-        studentGoal: req.student_goal ?? "fun",
-        status: req.status,
-        createdAt: req.created_at,
-      }));
+      // Get tutor profiles for the matches
+      const supabaseAccepted: typeof acceptedMatches = [];
+      if (matches && matches.length > 0) {
+        for (const match of matches as any[]) {
+          const { data: tutor } = await getSupabase()
+            .from("tutor_profiles")
+            .select("name, instruments, teaching_style, student_preference")
+            .eq("id", match.tutor_id)
+            .single();
+
+          supabaseAccepted.push({
+            id: match.id,
+            tutorName: (tutor as any)?.name ?? "Tutor",
+            tutorInstruments: (tutor as any)?.instruments ?? [],
+            tutorTeachingStyle: (tutor as any)?.teaching_style ?? "balanced",
+            tutorStudentPreference: (tutor as any)?.student_preference ?? "all",
+            status: match.status,
+            createdAt: match.created_at,
+          });
+        }
+      }
 
       // Merge in localStorage accepted requests as fallback for demo cards
       let localAccepted: typeof supabaseAccepted = [];
       try {
         const saved = localStorage.getItem("lessonRequests");
         if (saved) {
-          localAccepted = JSON.parse(saved).filter(
+          const parsed = JSON.parse(saved).filter(
             (req: { status: string }) => req.status === "accepted"
           );
+          // Convert to match the new format
+          localAccepted = parsed.map((req: any) => ({
+            id: req.id,
+            tutorName: req.tutorName ?? "Tutor",
+            tutorInstruments: req.tutorInstruments ?? [],
+            tutorTeachingStyle: req.tutorTeachingStyle ?? "balanced",
+            tutorStudentPreference: req.tutorStudentPreference ?? "all",
+            status: req.status,
+            createdAt: req.createdAt,
+          }));
         }
       } catch {
         // Ignore malformed localStorage data
@@ -171,21 +193,21 @@ export default function StudentMatchesPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-slate-900">
-                      {match.studentName}
+                      {match.tutorName}
                     </h3>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                        {match.studentInstruments.join(", ")}
+                        {match.tutorInstruments.join(", ")}
                       </span>
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                        {match.studentExperience}
+                        {match.tutorTeachingStyle}
                       </span>
                       <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                        {match.studentGoal}
+                        {match.tutorStudentPreference}
                       </span>
                     </div>
                     <p className="mt-3 text-sm text-slate-500">
-                      Requested on {formatDate(match.createdAt)}
+                      Matched on {formatDate(match.createdAt)}
                     </p>
                   </div>
                   <span className="rounded-full bg-green-100 px-4 py-1 text-xs font-semibold text-green-700">

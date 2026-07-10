@@ -223,3 +223,30 @@ create policy "tutors can insert summaries where tutor_id = auth.uid()"
   on ai_practice_summaries for insert
   to authenticated
   with check (tutor_id = auth.uid());
+
+-- ============================================================
+-- 7. accepted_matches
+-- ============================================================
+create table accepted_matches (
+  id         uuid primary key default gen_random_uuid(),
+  student_id uuid references auth.users(id) on delete cascade,
+  tutor_id   uuid references auth.users(id) on delete cascade,
+  status     text default 'active',
+  created_at timestamptz default now(),
+  unique(student_id, tutor_id)
+);
+
+create index idx_accepted_matches_student_id on accepted_matches(student_id);
+create index idx_accepted_matches_tutor_id on accepted_matches(tutor_id);
+
+alter table accepted_matches enable row level security;
+
+create policy "authenticated users can read matches where they are student_id or tutor_id"
+  on accepted_matches for select
+  to authenticated
+  using (student_id = auth.uid() or tutor_id = auth.uid());
+
+create policy "tutors can insert matches where tutor_id = auth.uid()"
+  on accepted_matches for insert
+  to authenticated
+  with check (tutor_id = auth.uid());

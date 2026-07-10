@@ -57,6 +57,7 @@ export default function TutorDashboardPage() {
     {
       id: number;
       tutorId: number;
+      studentId?: string;
       studentName: string;
       studentInstruments: string[];
       studentExperience: string;
@@ -82,6 +83,7 @@ export default function TutorDashboardPage() {
   >([]);
   const [summaries, setSummaries] = useState<Record<string, string>>({});
   const [summaryLoading, setSummaryLoading] = useState<Record<string, boolean>>({});
+  const [matchedStudentIds, setMatchedStudentIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -110,6 +112,7 @@ export default function TutorDashboardPage() {
       const supabaseFormatted = (supabaseRequests ?? []).map((req: any) => ({
         id: req.id,
         tutorId: req.tutor_id,
+        studentId: req.student_id,
         studentName: req.student_name ?? "Student",
         studentInstruments: req.student_instruments ?? [],
         studentExperience: req.student_experience ?? "beginner",
@@ -139,30 +142,45 @@ export default function TutorDashboardPage() {
       // Ignore malformed summary cache
     }
 
-    // Fetch practice sessions from Supabase
+    // Fetch practice sessions from Supabase (filtered by matched students)
     (async () => {
       const { data: { user } } = await getSupabase().auth.getUser();
       if (user) {
-        const { data: supabaseSessions } = await getSupabase()
-          .from("practice_sessions")
-          .select("*")
-          .order("created_at", { ascending: false });
+        // First get accepted matches to know which students to show
+        const { data: matches } = await getSupabase()
+          .from("accepted_matches")
+          .select("student_id")
+          .eq("tutor_id", user.id)
+          .eq("status", "active");
 
-        if (supabaseSessions && supabaseSessions.length > 0) {
-          const formatted = supabaseSessions.map((s: any) => ({
-            id: s.id,
-            studentId: s.student_id,
-            studentName: s.student_name,
-            instrument: s.instrument,
-            exerciseName: s.exercise_name,
-            durationMinutes: s.duration_minutes,
-            difficulty: s.difficulty,
-            hardSections: s.hard_sections,
-            notes: s.notes,
-            createdAt: s.created_at,
-          }));
-          setPracticeSessions(formatted);
-          return;
+        const studentIds = new Set(
+          (matches as any[] ?? []).map((m) => m.student_id).filter(Boolean)
+        );
+
+        if (studentIds.size > 0) {
+          // Filter practice sessions by matched students
+          const { data: supabaseSessions } = await getSupabase()
+            .from("practice_sessions")
+            .select("*")
+            .in("student_id", Array.from(studentIds))
+            .order("created_at", { ascending: false });
+
+          if (supabaseSessions && supabaseSessions.length > 0) {
+            const formatted = supabaseSessions.map((s: any) => ({
+              id: s.id,
+              studentId: s.student_id,
+              studentName: s.student_name,
+              instrument: s.instrument,
+              exerciseName: s.exercise_name,
+              durationMinutes: s.duration_minutes,
+              difficulty: s.difficulty,
+              hardSections: s.hard_sections,
+              notes: s.notes,
+              createdAt: s.created_at,
+            }));
+            setPracticeSessions(formatted);
+            return;
+          }
         }
       }
 
@@ -196,6 +214,25 @@ export default function TutorDashboardPage() {
             }
           }
           setSummaries((prev) => ({ ...prev, ...summariesMap }));
+        }
+      }
+    })();
+
+    // Fetch accepted matches for current tutor
+    (async () => {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (user) {
+        const { data: matches } = await getSupabase()
+          .from("accepted_matches")
+          .select("student_id")
+          .eq("tutor_id", user.id)
+          .eq("status", "active");
+
+        if (matches) {
+          const studentIds = new Set(
+            (matches as any[]).map((m) => m.student_id).filter(Boolean)
+          );
+          setMatchedStudentIds(studentIds);
         }
       }
     })();
@@ -241,6 +278,13 @@ export default function TutorDashboardPage() {
       if (request.source === "supabase") {
         (getSupabase()
           .from("lesson_requests") as any).update({ status: "accepted" }).eq("id", id);
+
+        // Also upsert to accepted_matches
+        (getSupabase() as any).from("accepted_matches").upsert({
+          student_id: request.studentId,
+          tutor_id: request.tutorId,
+          status: "active",
+        }, { onConflict: "student_id, tutor_id" });
       } else {
         // Update localStorage if from localStorage
         const localRequests = updated.filter((req) => req.source === "localStorage");
